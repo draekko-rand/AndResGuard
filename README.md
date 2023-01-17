@@ -1,10 +1,10 @@
 # AndResGuard
 
+##**Forked From Shwenzhang, Bug Fix Only and PR patches, No New Features**
+
 [![Build Status](https://travis-ci.org/shwenzhang/AndResGuard.svg?branch=master)](https://travis-ci.org/shwenzhang/AndResGuard)
 [ ![Download](https://api.bintray.com/packages/wemobiledev/maven/com.tencent.mm%3AAndResGuard-core/images/download.svg) ](https://bintray.com/wemobiledev/maven/com.tencent.mm%3AAndResGuard-core/_latestVersion)
 [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-AndResGuard-green.svg?style=true)](https://android-arsenal.com/details/1/3034)
-
-*Read this in other languages: [English](README.md), [简体中文](README.zh-cn.md).*
 
 `AndResGuard` is a tooling for reducing your apk size, it works like the `ProGuard` for Java source code, but only aim at the resource files. It changes `res/drawable/wechat` to `r/d/a`, and renames the resource file `wechat.png` to `a.png`. Finally, it repackages the apk with 7zip, which can reduce the package size obviously.
 
@@ -19,8 +19,6 @@ Some uses of `AndResGuard` are:
 3. Repackage with `7zip`. It supports repackage apk with `7zip`, and we can specify the compression method for each file.
 
 `AndResGuard` is a command-line tool, it supports Windows, Linux and Mac. We suggest you to use 7zip in Linux or Mac platform for a higher compression ratio.
-
-##**Forked From Shwenzhang, Bug Fix Only and PR patches, No New Features**
 
 ## How to use
 ### With Gradle
