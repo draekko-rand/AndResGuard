@@ -2,10 +2,6 @@
 
 ##**Forked From Shwenzhang, Bug Fix Only and PR patches, No New Features**
 
-[![Build Status](https://travis-ci.org/shwenzhang/AndResGuard.svg?branch=master)](https://travis-ci.org/shwenzhang/AndResGuard)
-[![Download](https://api.bintray.com/packages/wemobiledev/maven/com.tencent.mm%3AAndResGuard-core/images/download.svg) ](https://bintray.com/wemobiledev/maven/com.tencent.mm%3AAndResGuard-core/_latestVersion)
-[![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-AndResGuard-green.svg?style=true)](https://android-arsenal.com/details/1/3034)
-
 `AndResGuard` is a tooling for reducing your apk size, it works like the `ProGuard` for Java source code, but only aim at the resource files. It changes `res/drawable/wechat` to `r/d/a`, and renames the resource file `wechat.png` to `a.png`. Finally, it repackages the apk with 7zip, which can reduce the package size obviously.
 
 `AndResGuard` is fast, and it does **NOT** need the source codes. Input an Android apk, then we can get a 'ResGuard' apk in a few seconds.
