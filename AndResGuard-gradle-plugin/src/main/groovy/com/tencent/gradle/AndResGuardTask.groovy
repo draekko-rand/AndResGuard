@@ -7,6 +7,7 @@ import com.tencent.mm.resourceproguard.Main
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -15,8 +16,14 @@ import org.gradle.api.tasks.TaskAction
  * @author Sim Sun (sunsj1231@gmail.com)
  */
 class AndResGuardTask extends DefaultTask {
+  
+  @Internal
   AndResGuardExtension configuration
+
+  @Internal
   def android
+
+  @Internal
   def buildConfigs = []
 
   AndResGuardTask() {
@@ -33,10 +40,9 @@ class AndResGuardTask extends DefaultTask {
     android.applicationVariants.all { variant ->
       variant.outputs.each { output ->
         // remove "resguard"
-        String variantName = this.name["resguard".length()..-1]
-        if (variantName.equalsIgnoreCase(variant.buildType.name as String) || isTargetFlavor(variantName,
-            variant.productFlavors, variant.buildType.name) ||
-            variantName.equalsIgnoreCase(AndResGuardPlugin.USE_APK_TASK_NAME)) {
+        String taskVariantName = this.name["resguard".length()..-1]
+        if (taskVariantName.equalsIgnoreCase(variant.buildType.name as String) || isTargetFlavor(taskVariantName, variant) ||
+                taskVariantName.equalsIgnoreCase(AndResGuardPlugin.USE_APK_TASK_NAME)) {
 
           def outputFile = null
           try {
@@ -66,7 +72,7 @@ class AndResGuardTask extends DefaultTask {
               applicationId,
               variant.buildType.name,
               variant.productFlavors,
-              variantName,
+              taskVariantName,
               variant.mergedFlavor.minSdkVersion.apiLevel,
               variant.mergedFlavor.targetSdkVersion.apiLevel,
           )
@@ -79,11 +85,16 @@ class AndResGuardTask extends DefaultTask {
   }
 
   static isTargetFlavor(variantName, flavors, buildType) {
-    if (flavors.size() > 0) {
-      String flavor = flavors.get(0).name
-      return variantName.equalsIgnoreCase(flavor) || variantName.equalsIgnoreCase([flavors.collect { it.name }.join(""), buildType].join(""))
-    }
-    return false
+  static isTargetFlavor(taskVariantName, variant) {
+    def isTarget = true
+    def variantName = variant.name.capitalize()
+    String[] taskVariantNames = taskVariantName.split("(?=\\p{Upper})")
+
+    taskVariantNames.each { name ->
+      if (!variantName.contains(name)) {
+        isTarget = false
+      }
+    return isTarget
   }
 
   static useFolder(file) {
@@ -92,6 +103,7 @@ class AndResGuardTask extends DefaultTask {
     return "${file.parent}/AndResGuard_${fileName}/"
   }
 
+  @Internal
   def getZipAlignPath() {
     return "${android.getSdkDirectory().getAbsolutePath()}/build-tools/${android.buildToolsVersion}/zipalign"
   }

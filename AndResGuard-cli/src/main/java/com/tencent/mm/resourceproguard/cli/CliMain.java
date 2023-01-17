@@ -30,6 +30,7 @@ public class CliMain extends Main {
   private static final String ARG_SIGNATURE_TYPE = "-signatureType";
   private static final String VALUE_SIGNATURE_TYPE_V1 = "v1";
   private static final String VALUE_SIGNATURE_TYPE_V2 = "v2";
+  private static final String VALUE_SIGNATURE_TYPE_V3 = "v3";
 
   public static void main(String[] args) {
     mBeginTime = System.currentTimeMillis();
@@ -85,7 +86,8 @@ public class CliMain extends Main {
         command,
         ARG_SIGNATURE_TYPE,
         VALUE_SIGNATURE_TYPE_V1,
-        VALUE_SIGNATURE_TYPE_V2
+        VALUE_SIGNATURE_TYPE_V2,
+        VALUE_SIGNATURE_TYPE_V3
     );
 
     out.println("if you want to special 7za or zipalign path, you can input:");
@@ -94,9 +96,9 @@ public class CliMain extends Main {
                 + " "
                 + "input.apk "
                 + ARG_7ZIP
-                + " /home/shwenzhang/tools/7za "
+                + " /usr/bin/7za "
                 + ARG_ZIPALIGN
-                + " /home/shwenzhang/sdk/tools/zipalign");
+                + " /home/username/sdk/tools/zipalign");
 
     out.println("if you just want to repackage an apk compress with 7z:");
     out.println("Such as: java -jar " + command + " " + ARG_REPACKAGE + " input.apk");
@@ -109,9 +111,9 @@ public class CliMain extends Main {
                 + ARG_OUT
                 + " output_directory "
                 + ARG_7ZIP
-                + " /home/shwenzhang/tools/7za "
+                + " /usr/bin/7za "
                 + ARG_ZIPALIGN
-                + "/home/shwenzhang/sdk/tools/zipalign");
+                + "/home/username/sdk/tools/zipalign");
     out.println("if you want to special the final apk path, you can input:");
     out.printf("Such as: java -jar %s input.apk %s final_apk_path\n", command, ARG_FINAL_APK_PATH);
     out.println();
@@ -436,6 +438,8 @@ public class CliMain extends Main {
 
           if (VALUE_SIGNATURE_TYPE_V2.equalsIgnoreCase(args[++index])) {
             signatureType = InputParam.SignatureType.SchemaV2;
+          } else if (VALUE_SIGNATURE_TYPE_V3.equalsIgnoreCase(args[++index])) {
+            signatureType = InputParam.SignatureType.SchemaV3;
           } else {
             signatureType = InputParam.SignatureType.SchemaV1;
           }

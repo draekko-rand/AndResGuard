@@ -20,6 +20,8 @@ Some uses of `AndResGuard` are:
 
 `AndResGuard` is a command-line tool, it supports Windows, Linux and Mac. We suggest you to use 7zip in Linux or Mac platform for a higher compression ratio.
 
+##**Forked From Shwenzhang, Bug Fix Only and PR patches, No New Features**
+
 ## How to use
 ### With Gradle
 This has been released on `Bintray`

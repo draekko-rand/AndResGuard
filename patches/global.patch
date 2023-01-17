@@ -1,0 +1,351 @@
+diff --git a/AndResGuard-cli/build.gradle b/AndResGuard-cli/build.gradle
+index a82ce0b..0913fd9 100644
+--- a/AndResGuard-cli/build.gradle
++++ b/AndResGuard-cli/build.gradle
+@@ -6,9 +6,9 @@ version rootProject.ext.VERSION_NAME
+ group rootProject.ext.GROUP
+ 
+ dependencies {
+-  compile fileTree(dir: 'libs', include: ['*.jar'])
++  implementation fileTree(dir: 'libs', include: ['*.jar'])
+   //compile group: 'com.tencent.mm', name: 'AndResGuard-core', version: version
+-  compile project(':AndResGuard-core')
++  implementation project(':AndResGuard-core')
+ }
+ 
+ sourceSets {
+diff --git a/AndResGuard-core/build.gradle b/AndResGuard-core/build.gradle
+index a036334..6c579d9 100644
+--- a/AndResGuard-core/build.gradle
++++ b/AndResGuard-core/build.gradle
+@@ -7,9 +7,9 @@ group rootProject.ext.GROUP
+ 
+ [compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
+ dependencies {
+-  compile fileTree(dir: 'libs', include: ['*.jar'])
+-  compile 'com.android.tools.build:gradle:4.1.2'
+-  compile 'commons-io:commons-io:2.6'
++  implementation fileTree(dir: 'libs', include: ['*.jar'])
++  implementation 'com.android.tools.build:gradle:7.0.3'
++  implementation 'commons-io:commons-io:2.6'
+ }
+ 
+ sourceSets {
+@@ -22,4 +22,4 @@ sourceSets {
+ [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+ 
+ apply from: rootProject.file('gradle/java-artifacts.gradle')
+-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
++//apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+diff --git a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/ResourceApkBuilder.java b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/ResourceApkBuilder.java
+index 20c761f..8fdcc29 100644
+--- a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/ResourceApkBuilder.java
++++ b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/ResourceApkBuilder.java
+@@ -289,7 +289,7 @@ public class ResourceApkBuilder {
+       ));
+     }
+     String cmd = Utils.isPresent(config.mZipalignPath) ? config.mZipalignPath : TypedValue.COMMAND_ZIPALIGIN;
+-    Utils.runCmd(cmd, "4", before.getAbsolutePath(), after.getAbsolutePath());
++    Utils.runCmd(cmd,"-f","-p", "4", before.getAbsolutePath(), after.getAbsolutePath());
+     if (!after.exists()) {
+       throw new IOException(String.format("can not found the aligned apk file, the ZipAlign path is correct? path=%s",
+           mAlignedApk.getAbsolutePath()
+diff --git a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java
+index 97a969c..7bd9bb2 100644
+--- a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java
++++ b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java
+@@ -354,12 +354,32 @@ public class ARSCDecoder {
+       mPkg.setCanResguard(true);
+     }
+     nextChunk();
++    // PROBLEM DESCRIPTION: In an Android application that contains multiple Dynamic Feature modules,
++    // AndResGuard will report an error,
++    // corresponding to the error stack: https://user-images.githubusercontent.com/7645818/115002599-861ae980-9ed7-11eb-90a6-d22d8576730a.png
++    //
++    // PROBLEM ANALYSIS: By analyzing the resources.arsc binary file, it is found that in the binary block
++    // of the chunk type of RES_TABLE_TYPE of the ordinary application, the data distribution first exists
++    // in TYPE_LIBRARY, and then there is the data block of TYPE_SPEC_TYPE.
++    // In applications that include Dynamic Feature, TYPE_LIBRARY data blocks and TYPE_SPEC_TYPE data blocks
++    // will alternate, and the existing chunk parsing logic will throw an exception.
++    //
++    // FIX PLAN: rewrite the parsing logic of TYPE_LIBRARY, TYPE_SPEC_TYPE data blocks into the form of
++    // a **while** loop to support the scene where two types of data blocks are mixed
++    //
++    // VERIFICATION SITUATION: The resource confusion is normal, and it has been running normally on
++    // the mobile QQ pipeline for a long time, and the release version is also running stable
++    while (mHeader.type == Header.TYPE_LIBRARY || mHeader.type == Header.TYPE_SPEC_TYPE) {
++      if (mHeader.type == Header.TYPE_LIBRARY) {
++        readLibraryType();
++      }
++      if (mHeader.type == Header.TYPE_SPEC_TYPE) {
++        readTableTypeSpec();
++      }
++    }
+     while (mHeader.type == Header.TYPE_LIBRARY) {
+       readLibraryType();
+     }
+-    while (mHeader.type == Header.TYPE_SPEC_TYPE) {
+-      readTableTypeSpec();
+-    }
+     return mPkg;
+   }
+ 
+@@ -392,12 +412,17 @@ public class ARSCDecoder {
+       StringBlock.writeAll(mIn, mOut);
+     }
+     writeNextChunk(0);
++    while (mHeader.type == Header.TYPE_LIBRARY || mHeader.type == Header.TYPE_SPEC_TYPE) {
++      if (mHeader.type == Header.TYPE_LIBRARY) {
++        writeLibraryType();
++      }
++      if (mHeader.type == Header.TYPE_SPEC_TYPE) {
++        writeTableTypeSpec();
++      }
++    }
+     while (mHeader.type == Header.TYPE_LIBRARY) {
+       writeLibraryType();
+     }
+-    while (mHeader.type == Header.TYPE_SPEC_TYPE) {
+-      writeTableTypeSpec();
+-    }
+   }
+ 
+   /**
+diff --git a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java
+index 696cda8..4df3250 100644
+--- a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java
++++ b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java
+@@ -117,11 +117,13 @@ public class RawARSCDecoder {
+     mResId = id << 24;
+     mPkg = new ResPackage(id, name);
+     nextChunk();
+-    while (mHeader.type == Header.TYPE_LIBRARY) {
+-      readLibraryType();
+-    }
+-    while (mHeader.type == Header.TYPE_SPEC_TYPE) {
+-      readTableTypeSpec();
++    while (mHeader.type == ARSCDecoder.Header.TYPE_LIBRARY || mHeader.type == ARSCDecoder.Header.TYPE_SPEC_TYPE) {
++      if (mHeader.type == ARSCDecoder.Header.TYPE_LIBRARY) {
++        readLibraryType();
++      }
++      if (mHeader.type == ARSCDecoder.Header.TYPE_SPEC_TYPE) {
++        readTableTypeSpec();
++      }
+     }
+ 
+     return mPkg;
+diff --git a/AndResGuard-core/src/main/java/com/tencent/mm/util/FileOperation.java b/AndResGuard-core/src/main/java/com/tencent/mm/util/FileOperation.java
+index b022c79..62b0d99 100644
+--- a/AndResGuard-core/src/main/java/com/tencent/mm/util/FileOperation.java
++++ b/AndResGuard-core/src/main/java/com/tencent/mm/util/FileOperation.java
+@@ -160,7 +160,11 @@ public class FileOperation {
+         }
+         BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(entry));
+ 
+-        File file = new File(filePath + File.separator + entry.getName());
++        File file = new File(filePath, entry.getName());
++
++        if (!file.toPath().normalize().startsWith(filePath)) {
++          throw new IOException("Bad zip entry");
++        }
+ 
+         File parent = file.getParentFile();
+         if (parent != null && (!parent.exists())) {
+diff --git a/AndResGuard-example/build.gradle b/AndResGuard-example/build.gradle
+index 40dba41..e0c930f 100644
+--- a/AndResGuard-example/build.gradle
++++ b/AndResGuard-example/build.gradle
+@@ -6,7 +6,7 @@ buildscript {
+     jcenter()
+   }
+   dependencies {
+-    classpath 'com.android.tools.build:gradle:4.1.1'
++    classpath 'com.android.tools.build:gradle:7.0.3'
+     // NOTE: Do not place your application dependencies here; they belong
+     // in the individual module build.gradle files
+   }
+diff --git a/AndResGuard-gradle-plugin/build.gradle b/AndResGuard-gradle-plugin/build.gradle
+index ce7b321..d4f5bde 100644
+--- a/AndResGuard-gradle-plugin/build.gradle
++++ b/AndResGuard-gradle-plugin/build.gradle
+@@ -4,16 +4,16 @@ version rootProject.ext.VERSION_NAME
+ group rootProject.ext.GROUP
+ 
+ dependencies {
+-  compile gradleApi()
+-  compile localGroovy()
++  implementation gradleApi()
++  implementation localGroovy()
+   //compile group: 'com.tencent.mm', name: 'AndResGuard-core', version: version
+-  compile 'com.google.gradle:osdetector-gradle-plugin:1.6.0'
+-  compile project(':AndResGuard-core')
++  implementation 'com.google.gradle:osdetector-gradle-plugin:1.6.0'
++  implementation project(':AndResGuard-core')
+ }
+ 
+ repositories {
+   mavenCentral()
+ }
+ 
+-apply from: rootProject.file('gradle/java-artifacts.gradle')
+-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+\ No newline at end of file
++//apply from: rootProject.file('gradle/java-artifacts.gradle')
++//apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+\ No newline at end of file
+diff --git a/AndResGuard-gradle-plugin/src/main/groovy/com/tencent/gradle/AndResGuardTask.groovy b/AndResGuard-gradle-plugin/src/main/groovy/com/tencent/gradle/AndResGuardTask.groovy
+index 847525a..f9c4c45 100644
+--- a/AndResGuard-gradle-plugin/src/main/groovy/com/tencent/gradle/AndResGuardTask.groovy
++++ b/AndResGuard-gradle-plugin/src/main/groovy/com/tencent/gradle/AndResGuardTask.groovy
+@@ -7,6 +7,7 @@ import com.tencent.mm.resourceproguard.Main
+ import org.gradle.api.DefaultTask
+ import org.gradle.api.GradleException
+ import org.gradle.api.provider.Property
++import org.gradle.api.tasks.Internal
+ import org.gradle.api.tasks.TaskAction
+ 
+ /**
+@@ -15,8 +16,14 @@ import org.gradle.api.tasks.TaskAction
+  * @author Sim Sun (sunsj1231@gmail.com)
+  */
+ class AndResGuardTask extends DefaultTask {
++  
++  @Internal
+   AndResGuardExtension configuration
++
++  @Internal
+   def android
++
++  @Internal
+   def buildConfigs = []
+ 
+   AndResGuardTask() {
+@@ -33,10 +40,9 @@ class AndResGuardTask extends DefaultTask {
+     android.applicationVariants.all { variant ->
+       variant.outputs.each { output ->
+         // remove "resguard"
+-        String variantName = this.name["resguard".length()..-1]
+-        if (variantName.equalsIgnoreCase(variant.buildType.name as String) || isTargetFlavor(variantName,
+-            variant.productFlavors, variant.buildType.name) ||
+-            variantName.equalsIgnoreCase(AndResGuardPlugin.USE_APK_TASK_NAME)) {
++        String taskVariantName = this.name["resguard".length()..-1]
++        if (taskVariantName.equalsIgnoreCase(variant.buildType.name as String) || isTargetFlavor(taskVariantName, variant) ||
++                taskVariantName.equalsIgnoreCase(AndResGuardPlugin.USE_APK_TASK_NAME)) {
+ 
+           def outputFile = null
+           try {
+@@ -66,7 +72,7 @@ class AndResGuardTask extends DefaultTask {
+               applicationId,
+               variant.buildType.name,
+               variant.productFlavors,
+-              variantName,
++              taskVariantName,
+               variant.mergedFlavor.minSdkVersion.apiLevel,
+               variant.mergedFlavor.targetSdkVersion.apiLevel,
+           )
+@@ -79,11 +85,16 @@ class AndResGuardTask extends DefaultTask {
+   }
+ 
+   static isTargetFlavor(variantName, flavors, buildType) {
+-    if (flavors.size() > 0) {
+-      String flavor = flavors.get(0).name
+-      return variantName.equalsIgnoreCase(flavor) || variantName.equalsIgnoreCase([flavors.collect { it.name }.join(""), buildType].join(""))
+-    }
+-    return false
++  static isTargetFlavor(taskVariantName, variant) {
++    def isTarget = true
++    def variantName = variant.name.capitalize()
++    String[] taskVariantNames = taskVariantName.split("(?=\\p{Upper})")
++
++    taskVariantNames.each { name ->
++      if (!variantName.contains(name)) {
++        isTarget = false
++      }
++    return isTarget
+   }
+ 
+   static useFolder(file) {
+@@ -92,6 +103,7 @@ class AndResGuardTask extends DefaultTask {
+     return "${file.parent}/AndResGuard_${fileName}/"
+   }
+ 
++  @Internal
+   def getZipAlignPath() {
+     return "${android.getSdkDirectory().getAbsolutePath()}/build-tools/${android.buildToolsVersion}/zipalign"
+   }
+@@ -184,4 +196,4 @@ class AndResGuardTask extends DefaultTask {
+     InputParam inputParam = builder.create()
+     Main.gradleRun(inputParam)
+   }
+-}
+\ No newline at end of file
++}
+diff --git a/SevenZip/build.gradle b/SevenZip/build.gradle
+index dc93ebb..cf1f0cc 100644
+--- a/SevenZip/build.gradle
++++ b/SevenZip/build.gradle
+@@ -1,5 +1,5 @@
+ //apply plugin: 'com.google.osdetector'
+-apply plugin: 'maven'
++//apply plugin: 'maven'
+ apply plugin: 'maven-publish'
+ apply plugin: 'java'
+ 
+@@ -50,4 +50,4 @@ publishing {
+   }
+ }
+ 
+-apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
++//apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
+diff --git a/build.gradle b/build.gradle
+index 50b9b1f..af61933 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -1,20 +1,22 @@
+ // Top-level build file where you can add configuration options common to all sub-projects/modules.
+ buildscript {
+   repositories {
++    mavenLocal()
++    maven { url "https://plugins.gradle.org/m2/" }
+     google()
+-    jcenter()
+   }
+   dependencies {
+-    classpath 'com.android.tools.build:gradle:4.1.2'
+-    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+-    classpath 'com.ofg:uptodate-gradle-plugin:1.6.2'
++    classpath 'com.android.tools.build:gradle:7.0.3'
++//    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
++//    classpath 'com.ofg:uptodate-gradle-plugin:1.6.2'
+   }
+ }
+ 
+ allprojects {
+   repositories {
++    mavenLocal()
++    maven { url "https://plugins.gradle.org/m2/" }
+     google()
+-    jcenter()
+   }
+   tasks.withType(JavaCompile) {
+     sourceCompatibility = rootProject.ext.javaVersion
+diff --git a/gradle.properties b/gradle.properties
+index 775072b..0777d14 100644
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -12,4 +12,4 @@
+ # This option should only be used with decoupled projects. More details, visit
+ # http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
+ # org.gradle.parallel=true
+-ANDRESGUARD_VESSION=1.2.21
++ANDRESGUARD_VESSION=1.2.22
+diff --git a/gradle/wrapper/gradle-wrapper.properties b/gradle/wrapper/gradle-wrapper.properties
+index 3ace9b4..d3cd473 100644
+--- a/gradle/wrapper/gradle-wrapper.properties
++++ b/gradle/wrapper/gradle-wrapper.properties
+@@ -3,4 +3,4 @@ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-4.10.1-all.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-7.3-all.zip

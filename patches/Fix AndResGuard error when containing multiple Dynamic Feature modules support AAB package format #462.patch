@@ -1,0 +1,106 @@
+From 3c2d063ab50d7a0697ffbc244e3680bf1b7fbfde Mon Sep 17 00:00:00 2001
+From: zhuoxu <zhuoxu@tencent.com>
+Date: Fri, 16 Apr 2021 17:49:06 +0800
+Subject: [PATCH] feat(core):  fix AndResGuard error when containing multiple
+ Dynamic Feature modules, support AAB package format #462
+
+PROBLEM DESCRIPTION: In an Android application that contains multiple Dynamic Feature modules, AndResGuard will report an error, corresponding to the error stack:
+
+PROBLEM ANALYSIS: By analyzing the resources.arsc binary file, it is found that in the binary block
+of the chunk type of RES_TABLE_TYPE of the ordinary application, the data distribution first exists
+in TYPE_LIBRARY, and then there is the data block of TYPE_SPEC_TYPE.
+In applications that include Dynamic Feature, TYPE_LIBRARY data blocks and TYPE_SPEC_TYPE data blocks
+will alternate, and the existing chunk parsing logic will throw an exception.
+
+FIX PLAN: rewrite the parsing logic of TYPE_LIBRARY, TYPE_SPEC_TYPE data blocks into the form of
+a while loop to support the scene where two types of data blocks are mixed
+
+VERIFICATION SITUATION: The resource confusion is normal, and it has been running normally on
+the mobile QQ pipeline for a long time, and the release version is also running stable
+
+close #462
+---
+ .../mm/androlib/res/decoder/ARSCDecoder.java  | 39 ++++++++++++++-----
+ .../androlib/res/decoder/RawARSCDecoder.java  | 12 +++---
+ 2 files changed, 36 insertions(+), 15 deletions(-)
+
+diff --git a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java
+index 97a969c4..6c15a7c7 100644
+--- a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java
++++ b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/ARSCDecoder.java
+@@ -354,11 +354,28 @@ private ResPackage readPackage() throws IOException, AndrolibException {
+       mPkg.setCanResguard(true);
+     }
+     nextChunk();
+-    while (mHeader.type == Header.TYPE_LIBRARY) {
+-      readLibraryType();
+-    }
+-    while (mHeader.type == Header.TYPE_SPEC_TYPE) {
+-      readTableTypeSpec();
++    // PROBLEM DESCRIPTION: In an Android application that contains multiple Dynamic Feature modules,
++    // AndResGuard will report an error,
++    // corresponding to the error stack: https://user-images.githubusercontent.com/7645818/115002599-861ae980-9ed7-11eb-90a6-d22d8576730a.png
++    //
++    // PROBLEM ANALYSIS: By analyzing the resources.arsc binary file, it is found that in the binary block
++    // of the chunk type of RES_TABLE_TYPE of the ordinary application, the data distribution first exists
++    // in TYPE_LIBRARY, and then there is the data block of TYPE_SPEC_TYPE.
++    // In applications that include Dynamic Feature, TYPE_LIBRARY data blocks and TYPE_SPEC_TYPE data blocks
++    // will alternate, and the existing chunk parsing logic will throw an exception.
++    //
++    // FIX PLAN: rewrite the parsing logic of TYPE_LIBRARY, TYPE_SPEC_TYPE data blocks into the form of
++    // a **while** loop to support the scene where two types of data blocks are mixed
++    //
++    // VERIFICATION SITUATION: The resource confusion is normal, and it has been running normally on
++    // the mobile QQ pipeline for a long time, and the release version is also running stable
++    while (mHeader.type == Header.TYPE_LIBRARY || mHeader.type == Header.TYPE_SPEC_TYPE) {
++      if (mHeader.type == Header.TYPE_LIBRARY) {
++        readLibraryType();
++      }
++      if (mHeader.type == Header.TYPE_SPEC_TYPE) {
++        readTableTypeSpec();
++      }
+     }
+     return mPkg;
+   }
+@@ -392,11 +409,13 @@ private void writePackage() throws IOException, AndrolibException {
+       StringBlock.writeAll(mIn, mOut);
+     }
+     writeNextChunk(0);
+-    while (mHeader.type == Header.TYPE_LIBRARY) {
+-      writeLibraryType();
+-    }
+-    while (mHeader.type == Header.TYPE_SPEC_TYPE) {
+-      writeTableTypeSpec();
++    while (mHeader.type == Header.TYPE_LIBRARY || mHeader.type == Header.TYPE_SPEC_TYPE) {
++      if (mHeader.type == Header.TYPE_LIBRARY) {
++        writeLibraryType();
++      }
++      if (mHeader.type == Header.TYPE_SPEC_TYPE) {
++        writeTableTypeSpec();
++      }
+     }
+   }
+ 
+diff --git a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java
+index 696cda80..4df3250b 100644
+--- a/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java
++++ b/AndResGuard-core/src/main/java/com/tencent/mm/androlib/res/decoder/RawARSCDecoder.java
+@@ -117,11 +117,13 @@ private ResPackage readTablePackage() throws IOException, AndrolibException {
+     mResId = id << 24;
+     mPkg = new ResPackage(id, name);
+     nextChunk();
+-    while (mHeader.type == Header.TYPE_LIBRARY) {
+-      readLibraryType();
+-    }
+-    while (mHeader.type == Header.TYPE_SPEC_TYPE) {
+-      readTableTypeSpec();
++    while (mHeader.type == ARSCDecoder.Header.TYPE_LIBRARY || mHeader.type == ARSCDecoder.Header.TYPE_SPEC_TYPE) {
++      if (mHeader.type == ARSCDecoder.Header.TYPE_LIBRARY) {
++        readLibraryType();
++      }
++      if (mHeader.type == ARSCDecoder.Header.TYPE_SPEC_TYPE) {
++        readTableTypeSpec();
++      }
+     }
+ 
+     return mPkg;
