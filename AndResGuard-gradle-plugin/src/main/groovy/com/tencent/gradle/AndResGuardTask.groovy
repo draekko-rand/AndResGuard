@@ -84,17 +84,17 @@ class AndResGuardTask extends DefaultTask {
     }
   }
 
-  static isTargetFlavor(variantName, flavors, buildType) {
   static isTargetFlavor(taskVariantName, variant) {
     def isTarget = true
     def variantName = variant.name.capitalize()
     String[] taskVariantNames = taskVariantName.split("(?=\\p{Upper})")
 
     taskVariantNames.each { name ->
-      if (!variantName.contains(name)) {
-        isTarget = false
-      }
-    return isTarget
+        if (!variantName.contains(name)) {
+            isTarget = false
+        }
+        return isTarget
+    }
   }
 
   static useFolder(file) {

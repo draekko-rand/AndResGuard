@@ -33,7 +33,7 @@ ext {
   javaVersion = JavaVersion.VERSION_1_8
 
   GROUP = 'com.tencent.mm'
-  VERSION_NAME = "${ANDRESGUARD_VESSION}"
+  VERSION_NAME = "${ANDRESGUARD_VERSION}"
 
   POM_PACKAGING = "pom"
   POM_DESCRIPTION = "Android Resource Proguard Core Lib"
