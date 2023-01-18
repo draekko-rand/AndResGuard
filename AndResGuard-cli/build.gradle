@@ -8,6 +8,9 @@ group rootProject.ext.GROUP
 dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
   //compile group: 'com.tencent.mm', name: 'AndResGuard-core', version: version
+  implementation 'org.conscrypt:conscrypt-openjdk-uber:2.5.2'
+  implementation 'com.android.tools.build:apksig:8.0.0-alpha11'
+  implementation 'commons-io:commons-io:2.11.0'
   implementation project(':AndResGuard-core')
 }
 
@@ -19,7 +22,9 @@ sourceSets {
   }
 }
 
+
 jar {
+  exclude('META-INF/*.RSA', 'META-INF/*.DSA', 'META-INF/*.SF', 'META-INF/*.MF')
   manifest {
     attributes 'Main-Class': 'com.tencent.mm.resourceproguard.cli.CliMain'
     attributes 'Manifest-Version': archiveVersion
@@ -27,7 +32,6 @@ jar {
     attributes "Build-Time": releaseTime()
   }
   from {
-    //configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) }
     configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
   }
 }

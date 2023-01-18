@@ -67,7 +67,7 @@ andResGuard {
     ]
     sevenzip {
         artifact = 'com.tencent.mm:SevenZip:1.2.21'
-        //path = "/usr/local/bin/7za"
+        //path = "/usr/bin/7za"
     }
 
     /**

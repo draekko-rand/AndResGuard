@@ -5,15 +5,15 @@
 ## $3 = keystore filename
 
 if [ "$1" == ""]; then
-    echo "ERROR: make sure to specify input and output APK and keystore for signing"
+    echo "ERROR: make sure to specify input APK and output directory and keystore for signing"
     exit 1
 fi
 if [ "$2" == ""]; then
-    echo "ERROR: make sure to specify input and output APK and keystore for signing"
+    echo "ERROR: make sure to specify input APK and output directory and keystore for signing"
     exit 1
 fi
 if [ "$3" == ""]; then
-    echo "ERROR: make sure to specify input and output APK and keystore for signing"
+    echo "ERROR: make sure to specify input APK and output directory and keystore for signing"
     exit 1
 fi
 

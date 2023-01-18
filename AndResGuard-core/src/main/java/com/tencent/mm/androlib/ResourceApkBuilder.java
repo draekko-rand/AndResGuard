@@ -19,6 +19,7 @@ import java.util.List;
 import apksigner.ApkSignerTool;
 
 import static com.tencent.mm.resourceproguard.InputParam.SignatureType.SchemaV3;
+import static com.tencent.mm.resourceproguard.InputParam.SignatureType.SchemaV4;
 
 /**
  * @author shwenzhang
@@ -76,7 +77,7 @@ public class ResourceApkBuilder {
     }
   }
 
-  public void buildApkWithV2V3Sign(HashMap<String, Integer> compressData, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+  public void buildApkWithV2Sign(HashMap<String, Integer> compressData, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
     insureFileNameV2();
     generalUnsignApk(compressData);
     if (use7zApk(compressData, mUnSignedApk, m7ZipApk)) {
@@ -90,7 +91,43 @@ public class ResourceApkBuilder {
      * the app's signature is invalidated.
      * For this reason, use tools such as zipalign before signing your app using APK Signature Scheme v2, not after.
      **/
-    signApkV2V3(mAlignedApk, mSignedApk, minSDKVersion, signatureType);
+    signApkV2(mAlignedApk, mSignedApk, minSDKVersion, signatureType);
+    copyFinalApkV2();
+  }
+
+  public void buildApkWithV3Sign(HashMap<String, Integer> compressData, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+    insureFileNameV2();
+    generalUnsignApk(compressData);
+    if (use7zApk(compressData, mUnSignedApk, m7ZipApk)) {
+      alignApk(m7ZipApk, mAlignedApk);
+    } else {
+      alignApk(mUnSignedApk, mAlignedApk);
+    }
+
+    /*
+     * Caution: If you sign your app using APK Signature Scheme v2 and make further changes to the app,
+     * the app's signature is invalidated.
+     * For this reason, use tools such as zipalign before signing your app using APK Signature Scheme v2, not after.
+     **/
+    signApkV3(mAlignedApk, mSignedApk, minSDKVersion, signatureType);
+    copyFinalApkV2();
+  }
+
+  public void buildApkWithV4Sign(HashMap<String, Integer> compressData, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+    insureFileNameV2();
+    generalUnsignApk(compressData);
+    if (use7zApk(compressData, mUnSignedApk, m7ZipApk)) {
+      alignApk(m7ZipApk, mAlignedApk);
+    } else {
+      alignApk(mUnSignedApk, mAlignedApk);
+    }
+
+    /*
+     * Caution: If you sign your app using APK Signature Scheme v2 and make further changes to the app,
+     * the app's signature is invalidated.
+     * For this reason, use tools such as zipalign before signing your app using APK Signature Scheme v2, not after.
+     **/
+    signApkV4(mAlignedApk, mSignedApk, minSDKVersion, signatureType);
     copyFinalApkV2();
   }
 
@@ -206,17 +243,59 @@ public class ResourceApkBuilder {
     }
   }
 
-  private void signApkV2V3(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+  private void signApkV2(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
     if (config.mUseSignAPK) {
       System.out.printf("signing apk: %s\n", signedApk.getName());
-      signWithV2V3Sign(unSignedApk, signedApk, minSDKVersion, signatureType);
+      signWithV2Sign(unSignedApk, signedApk, minSDKVersion, signatureType);
       if (!signedApk.exists()) {
         throw new IOException("Can't Generate signed APK v2. Plz check your v2sign info is correct.");
       }
     }
   }
 
-  private void signWithV2V3Sign(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+  private void signApkV3(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+    if (config.mUseSignAPK) {
+      System.out.printf("signing apk: %s\n", signedApk.getName());
+      signWithV3Sign(unSignedApk, signedApk, minSDKVersion, signatureType);
+      if (!signedApk.exists()) {
+        throw new IOException("Can't Generate signed APK v2. Plz check your v2sign info is correct.");
+      }
+    }
+  }
+
+  private void signApkV4(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+    if (config.mUseSignAPK) {
+      System.out.printf("signing apk: %s\n", signedApk.getName());
+      signWithV4Sign(unSignedApk, signedApk, minSDKVersion, signatureType);
+      if (!signedApk.exists()) {
+        throw new IOException("Can't Generate signed APK v2. Plz check your v2sign info is correct.");
+      }
+    }
+  }
+
+  private void signWithV2Sign(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+    String[] params = new String[] {
+        "sign",
+        "--ks",
+        config.mSignatureFile.getAbsolutePath(),
+        "--ks-pass",
+        "pass:" + config.mStorePass,
+        "--min-sdk-version",
+        String.valueOf(minSDKVersion),
+        "--ks-key-alias",
+        config.mStoreAlias,
+        "--key-pass",
+        "pass:" + config.mKeyPass,
+        "--v2-signing-enabled",
+        String.valueOf(signatureType == InputParam.SignatureType.SchemaV2),
+        "--out",
+        signedApk.getAbsolutePath(),
+        unSignedApk.getAbsolutePath()
+    };
+    ApkSignerTool.main(params);
+  }
+
+  private void signWithV3Sign(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
     String[] params = new String[] {
         "sign",
         "--ks",
@@ -230,7 +309,29 @@ public class ResourceApkBuilder {
         "--key-pass",
         "pass:" + config.mKeyPass,
         "--v3-signing-enabled",
-        String.valueOf(signatureType == SchemaV3),
+        String.valueOf(signatureType == InputParam.SignatureType.SchemaV3),
+        "--out",
+        signedApk.getAbsolutePath(),
+        unSignedApk.getAbsolutePath()
+    };
+    ApkSignerTool.main(params);
+  }
+
+  private void signWithV4Sign(File unSignedApk, File signedApk, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
+    String[] params = new String[] {
+        "sign",
+        "--ks",
+        config.mSignatureFile.getAbsolutePath(),
+        "--ks-pass",
+        "pass:" + config.mStorePass,
+        "--min-sdk-version",
+        String.valueOf(minSDKVersion),
+        "--ks-key-alias",
+        config.mStoreAlias,
+        "--key-pass",
+        "pass:" + config.mKeyPass,
+        "--v4-signing-enabled",
+        String.valueOf(signatureType == InputParam.SignatureType.SchemaV4),
         "--out",
         signedApk.getAbsolutePath(),
         unSignedApk.getAbsolutePath()
@@ -257,6 +358,7 @@ public class ResourceApkBuilder {
         config.mStorePass,
         "-keypass",
         config.mKeyPass,
+        "--v1-signing-enabled true",
         "-signedjar",
         signedApk.getAbsolutePath(),
         unSignedApk.getAbsolutePath(),

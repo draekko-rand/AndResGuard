@@ -31,6 +31,7 @@ public class CliMain extends Main {
   private static final String VALUE_SIGNATURE_TYPE_V1 = "v1";
   private static final String VALUE_SIGNATURE_TYPE_V2 = "v2";
   private static final String VALUE_SIGNATURE_TYPE_V3 = "v3";
+  private static final String VALUE_SIGNATURE_TYPE_V4 = "v4";
 
   public static void main(String[] args) {
     mBeginTime = System.currentTimeMillis();
@@ -87,7 +88,8 @@ public class CliMain extends Main {
         ARG_SIGNATURE_TYPE,
         VALUE_SIGNATURE_TYPE_V1,
         VALUE_SIGNATURE_TYPE_V2,
-        VALUE_SIGNATURE_TYPE_V3
+        VALUE_SIGNATURE_TYPE_V3,
+        VALUE_SIGNATURE_TYPE_V4
     );
 
     out.println("if you want to special 7za or zipalign path, you can input:");
@@ -436,10 +438,13 @@ public class CliMain extends Main {
             goToError();
           }
 
-          if (VALUE_SIGNATURE_TYPE_V2.equalsIgnoreCase(args[++index])) {
+          int indexL = ++index;
+          if (VALUE_SIGNATURE_TYPE_V2.equalsIgnoreCase(args[indexL])) {
             signatureType = InputParam.SignatureType.SchemaV2;
-          } else if (VALUE_SIGNATURE_TYPE_V3.equalsIgnoreCase(args[++index])) {
+          } else if (VALUE_SIGNATURE_TYPE_V3.equalsIgnoreCase(args[indexL])) {
             signatureType = InputParam.SignatureType.SchemaV3;
+          } else if (VALUE_SIGNATURE_TYPE_V4.equalsIgnoreCase(args[indexL])) {
+            signatureType = InputParam.SignatureType.SchemaV4;
           } else {
             signatureType = InputParam.SignatureType.SchemaV1;
           }

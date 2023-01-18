@@ -1,15 +1,16 @@
 apply plugin: 'java'
 
 
-
 version rootProject.ext.VERSION_NAME
 group rootProject.ext.GROUP
 
 [compileJava, compileTestJava, javadoc]*.options*.encoding = 'UTF-8'
 dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
+  implementation 'commons-io:commons-io:2.11.0'
+  implementation 'org.conscrypt:conscrypt-openjdk-uber:2.5.2'
+  implementation 'com.android.tools.build:apksig:8.0.0-alpha11'
   implementation 'com.android.tools.build:gradle:7.0.3'
-  implementation 'commons-io:commons-io:2.6'
 }
 
 sourceSets {

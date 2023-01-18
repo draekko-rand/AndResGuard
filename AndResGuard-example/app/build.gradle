@@ -33,7 +33,7 @@ andResGuard {
                          "resources.arsc"]
   sevenzip {
     artifact = "com.tencent.mm:SevenZip:${ANDRESGUARD_SEVENZIP_VERSION}"
-    path = "/usr/bin/7za"
+    //path = "/usr/bin/7za"
   }
 
   /**
