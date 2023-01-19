@@ -1,14 +1,14 @@
 apply plugin: 'groovy'
+apply plugin: 'java-gradle-plugin'
 
 version rootProject.ext.VERSION_NAME
 group rootProject.ext.GROUP
 
 dependencies {
-  implementation gradleApi()
-  implementation localGroovy()
-  //compile group: 'com.tencent.mm', name: 'AndResGuard-core', version: version
   implementation 'com.google.gradle:osdetector-gradle-plugin:1.7.1'
   implementation project(':AndResGuard-core')
+  implementation gradleApi()
+  implementation localGroovy()
 }
 
 repositories {
@@ -16,6 +16,25 @@ repositories {
   jcenter()
   mavenCentral()
 }
+
+/*
+jar {
+    zip64 = true
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    from {
+        configurations.runtimeClasspath.filter{ it.exists() }.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+*/
+gradlePlugin {
+    plugins {
+        fileDiff {
+            id = 'com.tencent.AndResGuard'
+            implementationClass = 'com.tencent.gradle.AndResGuardPlugin'
+        }
+    }
+}
+
 
 //apply from: rootProject.file('gradle/java-artifacts.gradle')
 //apply from: rootProject.file('gradle/gradle-mvn-push.gradle')

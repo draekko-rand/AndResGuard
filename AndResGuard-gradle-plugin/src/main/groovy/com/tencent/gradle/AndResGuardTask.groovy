@@ -16,7 +16,7 @@ import org.gradle.api.tasks.TaskAction
  * @author Sim Sun (sunsj1231@gmail.com)
  */
 class AndResGuardTask extends DefaultTask {
-  
+
   @Internal
   AndResGuardExtension configuration
 
@@ -187,10 +187,12 @@ class AndResGuardTask extends DefaultTask {
           .setKeypass(signConfig.keyPassword)
           .setStorealias(signConfig.keyAlias)
           .setStorepass(signConfig.storePassword)
-      if (signConfig.hasProperty('v3SigningEnabled') && signConfig.v3SigningEnabled) {
-        builder.setSignatureType(InputParam.SignatureType.SchemaV3)
-      } else if (signConfig.hasProperty('v2SigningEnabled') && signConfig.v2SigningEnabled) {
+      if (signConfig.hasProperty('v2SigningEnabled') && signConfig.v2SigningEnabled) {
         builder.setSignatureType(InputParam.SignatureType.SchemaV2)
+      } else if (signConfig.hasProperty('v3SigningEnabled') && signConfig.v3SigningEnabled) {
+        builder.setSignatureType(InputParam.SignatureType.SchemaV3)
+      } else if (signConfig.hasProperty('v4SigningEnabled') && signConfig.v4SigningEnabled) {
+        builder.setSignatureType(InputParam.SignatureType.SchemaV4)
       }
     }
     InputParam inputParam = builder.create()

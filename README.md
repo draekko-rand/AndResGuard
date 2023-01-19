@@ -18,7 +18,9 @@ Some uses of `AndResGuard` are:
 
 ## How to use
 ### With Gradle
-This has been released on `Bintray`
+This has been released on `Bintray` 
+  
+Example using repo:
 ```gradle
 apply plugin: 'AndResGuard'
 
@@ -26,6 +28,7 @@ buildscript {
     repositories {
         jcenter()
         google()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.tencent.mm:AndResGuard-gradle-plugin:1.2.21'
@@ -83,7 +86,78 @@ andResGuard {
     // digestalg = "SHA-256"
 }
 ```
+  
+Example using custom jar:
+```gradle
+apply plugin: 'com.google.osdetector'
+apply plugin: 'com.tencent.AndResGuard'
 
+buildscript {
+    repositories {
+        jcenter()
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.gradle:osdetector-gradle-plugin:1.7.1'
+        classpath 'org.conscrypt:conscrypt-openjdk-uber:2.5.2'
+        classpath files('/path-to/libs/AndResGuard-core-1.2.22.jar')
+        classpath files('/path-to/libs/AndResGuard-gradle-plugin-1.2.22.jar')
+    }
+}
+
+andResGuard {
+    // mappingFile = file("./resource_mapping.txt")
+    mappingFile = null
+    use7zip = true
+    useSign = true
+    // It will keep the origin path of your resources when it's true
+    keepRoot = false
+    // If set, name column in arsc those need to proguard will be kept to this value
+    fixedResName = "arg"
+    // It will merge the duplicated resources, but don't rely on this feature too much.
+    // it's always better to remove duplicated resource from repo
+    mergeDuplicatedRes = true
+    whiteList = [
+        // your icon
+        "R.drawable.icon",
+        // for fabric
+        "R.string.com.crashlytics.*",
+        // for google-services
+        "R.string.google_app_id",
+        "R.string.gcm_defaultSenderId",
+        "R.string.default_web_client_id",
+        "R.string.ga_trackingId",
+        "R.string.firebase_database_url",
+        "R.string.google_api_key",
+        "R.string.google_crash_reporting_api_key",
+        "R.string.project_id",
+    ]
+    compressFilePattern = [
+        "*.png",
+        "*.jpg",
+        "*.jpeg",
+        "*.gif",
+    ]
+    sevenzip {
+        artifact = 'com.tencent.mm:SevenZip:1.2.21'
+        //path = "/usr/bin/7za"
+    }
+
+    /**
+    * Optional: if finalApkBackupPath is null, AndResGuard will overwrite final apk
+    * to the path which assemble[Task] write to
+    **/
+    // finalApkBackupPath = "${project.rootDir}/final.apk"
+
+    /**
+    * Optional: Specifies the name of the message digest algorithm to user when digesting the entries of JAR file
+    * Only works in V1signing, default value is "SHA-1"
+    **/
+    // digestalg = "SHA-256"
+}
+```
+  
 ### Wildcard
 The whiteList and compressFilePattern support wildcard include ? * +.
 
