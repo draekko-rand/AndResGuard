@@ -1,11 +1,12 @@
 package com.tencent.mm.util;
 
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.MessageDigest;
+import java.util.Objects;
 
 
 /**
@@ -31,7 +32,7 @@ public class Md5Util {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("MD5");
-            digest.update(FileUtils.readFileToByteArray(file));
+            digest.update(readFileToByteArray(file));
         } catch (Exception e) {
             return "";
         }
@@ -54,4 +55,8 @@ public class Md5Util {
         return stringBuilder.toString();
     }
 
+    public static byte[] readFileToByteArray(final File file) throws IOException {
+        Objects.requireNonNull(file, "file");
+        return Files.readAllBytes(file.toPath());
+    }
 }

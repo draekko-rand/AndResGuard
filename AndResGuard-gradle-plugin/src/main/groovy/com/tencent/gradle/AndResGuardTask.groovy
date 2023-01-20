@@ -21,6 +21,9 @@ class AndResGuardTask extends DefaultTask {
   AndResGuardExtension configuration
 
   @Internal
+  def debug = 0
+
+  @Internal
   def android
 
   @Internal
@@ -34,66 +37,36 @@ class AndResGuardTask extends DefaultTask {
     configuration = project.andResGuard
 
     if (StringUtil.isPresent(configuration.digestalg) && !configuration.digestalg.contains('-')) {
-      throw new RuntimeException("Plz add - in your digestalg, such as SHA-1 SHA-256")
+      throw new RuntimeException("Plz add - in your digestalg, such as SHA-1 or SHA-256")
     }
-
     android.applicationVariants.all { variant ->
-      variant.outputs.each { output ->
-        // remove "resguard"
+      variant.outputs.every { output ->
         String taskVariantName = this.name["resguard".length()..-1]
-        if (taskVariantName.equalsIgnoreCase(variant.buildType.name as String) || isTargetFlavor(taskVariantName, variant) ||
-                taskVariantName.equalsIgnoreCase(AndResGuardPlugin.USE_APK_TASK_NAME)) {
-
-          def outputFile = null
-          try {
-            if (variant.metaClass.respondsTo(variant, "getPackageApplicationProvider")) {
-              outputFile = new File(variant.packageApplicationProvider.get().outputDirectory, output.outputFileName)
-            }
-          } catch (Exception ignore) {
-            // no-op
-          } finally {
-            outputFile = outputFile ?: output.outputFile
+        if (taskVariantName.equalsIgnoreCase(variant.buildType.name as String)) {
+          if (debug == 1) {
+            println("=== Building Config ===")
+            println("[AndResGuard] variant.buildType.name: $variant.buildType.name")
+            println("[AndResGuard] taskVariantName: $taskVariantName")
+            println("[AndResGuard] signingConfig: $variant.variantData.variantDslInfo.signingConfig")
+            println("[AndResGuard] output: $output")
+            println(outputFile: "$output.outputFile")
+            println("===========================================================")
           }
-
-          def variantInfo
-          if (variant.variantData.hasProperty("variantConfiguration")) {
-            variantInfo = variant.variantData.variantConfiguration
-          } else {
-            variantInfo = variant.variantData.variantDslInfo
-          }
-
-          def applicationId = variantInfo.applicationId instanceof Property
-              ? variantInfo.applicationId.get()
-              : variantInfo.applicationId
-
           buildConfigs << new BuildInfo(
-              outputFile,
-              variantInfo.signingConfig,
-              applicationId,
-              variant.buildType.name,
-              variant.productFlavors,
-              taskVariantName,
-              variant.mergedFlavor.minSdkVersion.apiLevel,
-              variant.mergedFlavor.targetSdkVersion.apiLevel,
+                  output.outputFile,
+                  variant.variantData.variantDslInfo.signingConfig,
+                  variant.variantData.variantDslInfo.applicationId,
+                  variant.buildType.name,
+                  variant.productFlavors,
+                  taskVariantName,
+                  variant.mergedFlavor.minSdkVersion.apiLevel,
+                  variant.mergedFlavor.targetSdkVersion.apiLevel,
           )
         }
       }
     }
     if (!project.plugins.hasPlugin('com.android.application')) {
       throw new GradleException('generateARGApk: Android Application plugin required')
-    }
-  }
-
-  static isTargetFlavor(taskVariantName, variant) {
-    def isTarget = true
-    def variantName = variant.name.capitalize()
-    String[] taskVariantNames = taskVariantName.split("(?=\\p{Upper})")
-
-    taskVariantNames.each { name ->
-        if (!variantName.contains(name)) {
-            isTarget = false
-        }
-        return isTarget
     }
   }
 
@@ -112,38 +85,20 @@ class AndResGuardTask extends DefaultTask {
   run() {
     project.logger.info("[AndResGuard] configuartion:$configuration")
     project.logger.info("[AndResGuard] BuildConfigs:$buildConfigs")
+    if (debug == 1) println("[AndResGuard] configuartion:$configuration")
+    if (debug == 1) println("[AndResGuard] BuildConfigs:$buildConfigs")
 
     buildConfigs.each { config ->
-      if (config.taskName == AndResGuardPlugin.USE_APK_TASK_NAME) {
-        if (StringUtil.isBlank(configuration.sourceApk) || !new File(configuration.sourceApk).exists()) {
-          throw new PathNotExist("Original APK not existed for " + AndResGuardPlugin.USE_APK_TASK_NAME)
-        }
-        if (config.flavors.productFlavors.size() > 0 && StringUtil.isBlank(configuration.sourceFlavor)) {
-          throw new RuntimeException("Must setup sourceFlavor when flavors exist in build.gradle")
-        }
-        if (StringUtil.isBlank(configuration.sourceBuildType)) {
-          throw new RuntimeException("Must setup sourceBuildType when flavors exist in build.gradle")
-        }
-        if (config.buildType == configuration.sourceBuildType) {
-          if (StringUtil.isBlank(configuration.sourceFlavor) || (StringUtil.isPresent(configuration.sourceFlavor) &&
-              config.flavors.size() >
-              0 &&
-              config.flavors.get(0).name ==
-              configuration.sourceFlavor)) {
-            RunGradleTask(config, configuration.sourceApk, config.minSDKVersion, config.targetSDKVersion)
-          }
-        }
-      } else {
-        if (config.file == null || !config.file.exists()) {
-          throw new PathNotExist("Original APK not existed")
-        }
-        RunGradleTask(config, config.file.getAbsolutePath(), config.minSDKVersion, config.targetSDKVersion)
+      if (config.file == null || !config.file.exists()) {
+        throw new PathNotExist("Original APK doesn't exist")
       }
+      RunGradleTask(config, config.file.getAbsolutePath(), config.minSDKVersion, config.targetSDKVersion)
     }
   }
 
   def RunGradleTask(config, String absPath, int minSDKVersion, int targetSDKVersion) {
     def signConfig = config.signConfig
+    if (debug == 1) println("[AndResGuard] signConfig:$signConfig")
     String packageName = config.packageName
     ArrayList<String> whiteListFullName = new ArrayList<>()
     ExecutorExtension sevenzip = project.extensions.findByName("sevenzip") as ExecutorExtension
@@ -189,10 +144,16 @@ class AndResGuardTask extends DefaultTask {
           .setStorepass(signConfig.storePassword)
       if (signConfig.hasProperty('v2SigningEnabled') && signConfig.v2SigningEnabled) {
         builder.setSignatureType(InputParam.SignatureType.SchemaV2)
+        println "Using Signature Schema V2"
       } else if (signConfig.hasProperty('v3SigningEnabled') && signConfig.v3SigningEnabled) {
         builder.setSignatureType(InputParam.SignatureType.SchemaV3)
+        println "Using Signature Schema V3"
       } else if (signConfig.hasProperty('v4SigningEnabled') && signConfig.v4SigningEnabled) {
         builder.setSignatureType(InputParam.SignatureType.SchemaV4)
+        println "Using Signature Schema V4"
+      } else {
+        builder.setSignatureType(InputParam.SignatureType.SchemaV1)
+        println "Using Signature Schema V1"
       }
     }
     InputParam inputParam = builder.create()

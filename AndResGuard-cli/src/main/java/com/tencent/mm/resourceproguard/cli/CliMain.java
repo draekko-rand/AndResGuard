@@ -441,12 +441,16 @@ public class CliMain extends Main {
           int indexL = ++index;
           if (VALUE_SIGNATURE_TYPE_V2.equalsIgnoreCase(args[indexL])) {
             signatureType = InputParam.SignatureType.SchemaV2;
+            System.out.println("Selecting Signature type v2");
           } else if (VALUE_SIGNATURE_TYPE_V3.equalsIgnoreCase(args[indexL])) {
             signatureType = InputParam.SignatureType.SchemaV3;
+            System.out.println("Selecting Signature type v3");
           } else if (VALUE_SIGNATURE_TYPE_V4.equalsIgnoreCase(args[indexL])) {
             signatureType = InputParam.SignatureType.SchemaV4;
-          } else {
+            System.out.println("Selecting Signature type v4");
+          }  else {
             signatureType = InputParam.SignatureType.SchemaV1;
+            System.out.println("Selecting Signature type v1");
           }
         } else if (arg.equals(ARG_KEEPMAPPING)) {
           if (index == args.length - 1) {

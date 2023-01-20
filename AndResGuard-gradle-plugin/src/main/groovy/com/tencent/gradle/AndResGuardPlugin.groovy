@@ -11,8 +11,6 @@ import org.gradle.api.Project
 
 class AndResGuardPlugin implements Plugin<Project> {
 
-  public static final String USE_APK_TASK_NAME = "UseApk"
-
   @Override
   void apply(Project project) {
     project.apply plugin: 'com.google.osdetector'
@@ -21,7 +19,6 @@ class AndResGuardPlugin implements Plugin<Project> {
 
     project.afterEvaluate {
       def android = project.extensions.android
-      createTask(project, USE_APK_TASK_NAME)
 
       android.applicationVariants.all { variant ->
         def variantName = variant.name.capitalize()
@@ -46,9 +43,7 @@ class AndResGuardPlugin implements Plugin<Project> {
     def taskName = "resguard${variantName}"
     if (project.tasks.findByPath(taskName) == null) {
       def task = project.task(taskName, type: AndResGuardTask)
-      if (variantName != USE_APK_TASK_NAME) {
-        task.dependsOn "assemble${variantName}"
-      }
+      task.dependsOn "assemble${variantName}"
     }
   }
 }

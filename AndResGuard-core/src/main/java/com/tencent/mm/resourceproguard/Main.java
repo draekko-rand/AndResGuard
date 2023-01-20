@@ -81,7 +81,7 @@ public class Main {
 
   protected void resourceProguard(
       File outputDir, File outputFile, String apkFilePath, InputParam.SignatureType signatureType) {
-    resourceProguard(outputDir, outputFile, apkFilePath, signatureType, 14 /*default min sdk*/);
+    resourceProguard(outputDir, outputFile, apkFilePath, signatureType, 21 /*default min sdk*/);
   }
 
   protected void resourceProguard(
@@ -123,6 +123,7 @@ public class Main {
     builder.setOutDir(mOutDir, apkBasename, outputFile);
     System.out.printf("[AndResGuard] buildApk signatureType: %s\n", signatureType);
     switch (signatureType) {
+      default:
       case SchemaV1:
         builder.buildApkWithV1sign(decoder.getCompressData());
         break;

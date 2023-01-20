@@ -90,6 +90,11 @@ public class ApkDecoder {
     } else {
       mOutResFile = new File(mOutDir.getAbsolutePath() + File.separator + "res");
     }
+    if (!mOutResFile.exists()) {
+      if (mOutResFile.mkdirs()) {
+        System.out.println("Creating " + mOutResFile.toString());
+      }
+    }
 
     //这个需要混淆各个文件夹
     mRawResFile = new File(mOutDir.getAbsoluteFile().getAbsolutePath()
@@ -98,6 +103,12 @@ public class ApkDecoder {
                            + File.separator
                            + "res");
     mOutTempDir = new File(mOutDir.getAbsoluteFile().getAbsolutePath() + File.separator + TypedValue.UNZIP_FILE_PATH);
+
+    if (!mRawResFile.exists()) {
+      if (mRawResFile.mkdirs()) {
+        System.out.println("Creating " + mRawResFile.toString());
+      }
+    }
 
     //这里纪录原始res目录的文件
     Files.walkFileTree(mRawResFile.toPath(), new ResourceFilesVisitor());

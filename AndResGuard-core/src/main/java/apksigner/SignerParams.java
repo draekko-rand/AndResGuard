@@ -16,8 +16,8 @@
 
 package apksigner;
 
-import com.android.apksig.SigningCertificateLineage.SignerCapabilities;
-import com.android.apksig.internal.util.X509CertificateUtils;
+import apksig.SigningCertificateLineage.SignerCapabilities;
+import apksig.internal.util.X509CertificateUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,6 +50,7 @@ import javax.crypto.spec.PBEKeySpec;
 /** A utility class to load private key and certificates from a keystore or key and cert files. */
 public class SignerParams {
     private String name;
+
     private String keystoreFile;
     private String keystoreKeyAlias;
     private String keystorePasswordSpec;
@@ -59,73 +60,97 @@ public class SignerParams {
     private String keystoreProviderName;
     private String keystoreProviderClass;
     private String keystoreProviderArg;
+
     private String keyFile;
     private String certFile;
+
     private String v1SigFileBasename;
+
     private PrivateKey privateKey;
     private List<X509Certificate> certs;
     private final SignerCapabilities.Builder signerCapabilitiesBuilder =
             new SignerCapabilities.Builder();
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public void setKeystoreFile(String keystoreFile) {
         this.keystoreFile = keystoreFile;
     }
+
     public String getKeystoreKeyAlias() {
         return keystoreKeyAlias;
     }
+
     public void setKeystoreKeyAlias(String keystoreKeyAlias) {
         this.keystoreKeyAlias = keystoreKeyAlias;
     }
+
     public void setKeystorePasswordSpec(String keystorePasswordSpec) {
         this.keystorePasswordSpec = keystorePasswordSpec;
     }
+
     public void setKeyPasswordSpec(String keyPasswordSpec) {
         this.keyPasswordSpec = keyPasswordSpec;
     }
+
     public void setPasswordCharset(Charset passwordCharset) {
         this.passwordCharset = passwordCharset;
     }
+
     public void setKeystoreType(String keystoreType) {
         this.keystoreType = keystoreType;
     }
+
     public void setKeystoreProviderName(String keystoreProviderName) {
         this.keystoreProviderName = keystoreProviderName;
     }
+
     public void setKeystoreProviderClass(String keystoreProviderClass) {
         this.keystoreProviderClass = keystoreProviderClass;
     }
+
     public void setKeystoreProviderArg(String keystoreProviderArg) {
         this.keystoreProviderArg = keystoreProviderArg;
     }
+
     public String getKeyFile() {
         return keyFile;
     }
+
     public void setKeyFile(String keyFile) {
         this.keyFile = keyFile;
     }
+
     public void setCertFile(String certFile) {
         this.certFile = certFile;
     }
+
     public String getV1SigFileBasename() {
         return v1SigFileBasename;
     }
+
     public void setV1SigFileBasename(String v1SigFileBasename) {
         this.v1SigFileBasename = v1SigFileBasename;
     }
+
     public PrivateKey getPrivateKey() {
         return privateKey;
     }
+
     public List<X509Certificate> getCerts() {
         return certs;
     }
+
     public SignerCapabilities.Builder getSignerCapabilitiesBuilder() {
         return signerCapabilitiesBuilder;
     }
+
     boolean isEmpty() {
         return (name == null)
                 && (keystoreFile == null)
@@ -143,6 +168,7 @@ public class SignerParams {
                 && (privateKey == null)
                 && (certs == null);
     }
+
     public void loadPrivateKeyAndCerts(PasswordRetriever passwordRetriever) throws Exception {
         if (keystoreFile != null) {
             if (keyFile != null) {
@@ -160,11 +186,13 @@ public class SignerParams {
                     "KeyStore (--ks) or private key file (--key) must be specified");
         }
     }
+
     private void loadPrivateKeyAndCertsFromKeyStore(PasswordRetriever passwordRetriever)
             throws Exception {
         if (keystoreFile == null) {
             throw new ParameterException("KeyStore (--ks) must be specified");
         }
+
         // 1. Obtain a KeyStore implementation
         String ksType = (keystoreType != null) ? keystoreType : KeyStore.getDefaultType();
         KeyStore ks;
@@ -203,6 +231,7 @@ public class SignerParams {
             // Use the highest-priority Provider which offers the requested KeyStore type
             ks = KeyStore.getInstance(ksType);
         }
+
         // 2. Load the KeyStore
         List<char[]> keystorePasswords;
         Charset[] additionalPasswordEncodings;
@@ -219,6 +248,7 @@ public class SignerParams {
             loadKeyStoreFromFile(
                     ks, "NONE".equals(keystoreFile) ? null : keystoreFile, keystorePasswords);
         }
+
         // 3. Load the PrivateKey and cert chain from KeyStore
         String keyAlias = null;
         PrivateKey key = null;
@@ -247,12 +277,14 @@ public class SignerParams {
                     throw new ParameterException(keystoreFile + " does not contain key entries");
                 }
             }
+
             // Private key entry alias known. Load that entry's private key.
             keyAlias = keystoreKeyAlias;
             if (!ks.isKeyEntry(keyAlias)) {
                 throw new ParameterException(
                         keystoreFile + " entry \"" + keyAlias + "\" does not contain a key");
             }
+
             Key entryKey;
             if (keyPasswordSpec != null) {
                 // Key password spec is explicitly specified. Use this spec to obtain the
@@ -279,6 +311,7 @@ public class SignerParams {
                     entryKey = getKeyStoreKey(ks, keyAlias, keyPasswords);
                 }
             }
+
             if (entryKey == null) {
                 throw new ParameterException(
                         keystoreFile + " entry \"" + keyAlias + "\" does not contain a key");
@@ -312,6 +345,7 @@ public class SignerParams {
             this.certs.add((X509Certificate) cert);
         }
     }
+
     /**
      * Loads the password-protected keystore from storage.
      *
@@ -341,6 +375,7 @@ public class SignerParams {
             throw lastFailure;
         }
     }
+
     private static Key getKeyStoreKey(KeyStore ks, String keyAlias, List<char[]> passwords)
             throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
         UnrecoverableKeyException lastFailure = null;
@@ -357,6 +392,7 @@ public class SignerParams {
             throw lastFailure;
         }
     }
+
     private void loadPrivateKeyAndCertsFromFiles(PasswordRetriever passwordRetriever)
             throws Exception {
         if (keyFile == null) {
@@ -366,11 +402,13 @@ public class SignerParams {
             throw new ParameterException("Certificate file (--cert) must be specified");
         }
         byte[] privateKeyBlob = readFully(new File(keyFile));
+
         PKCS8EncodedKeySpec keySpec;
         // Potentially encrypted key blob
         try {
             EncryptedPrivateKeyInfo encryptedPrivateKeyInfo =
                     new EncryptedPrivateKeyInfo(privateKeyBlob);
+
             // The blob is indeed an encrypted private key blob
             String passwordSpec =
                     (keyPasswordSpec != null) ? keyPasswordSpec : PasswordRetriever.SPEC_STDIN;
@@ -392,6 +430,7 @@ public class SignerParams {
                         "Failed to parse encrypted private key blob " + keyFile, e);
             }
         }
+
         // Load the private key from its PKCS #8 encoded form.
         try {
             privateKey = loadPkcs8EncodedPrivateKey(keySpec);
@@ -399,6 +438,7 @@ public class SignerParams {
             throw new InvalidKeySpecException(
                     "Failed to load PKCS #8 encoded private key from " + keyFile, e);
         }
+
         // Load certificates
         Collection<? extends Certificate> certs;
         try (FileInputStream in = new FileInputStream(certFile)) {
@@ -410,6 +450,7 @@ public class SignerParams {
         }
         this.certs = certList;
     }
+
     private static PKCS8EncodedKeySpec decryptPkcs8EncodedKey(
             EncryptedPrivateKeyInfo encryptedPrivateKeyInfo, List<char[]> passwords)
             throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
@@ -436,6 +477,7 @@ public class SignerParams {
             throw lastKeySpecException;
         }
     }
+
     private static PrivateKey loadPkcs8EncodedPrivateKey(PKCS8EncodedKeySpec spec)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
@@ -452,6 +494,7 @@ public class SignerParams {
         }
         throw new InvalidKeySpecException("Not an RSA, EC, or DSA private key");
     }
+
     private static byte[] readFully(File file) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         try (FileInputStream in = new FileInputStream(file)) {
@@ -459,6 +502,7 @@ public class SignerParams {
         }
         return result.toByteArray();
     }
+
     private static void drain(InputStream in, OutputStream out) throws IOException {
         byte[] buf = new byte[65536];
         int chunkSize;

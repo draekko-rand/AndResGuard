@@ -7,6 +7,8 @@ import com.tencent.mm.util.FileOperation;
 import com.tencent.mm.util.TypedValue;
 import com.tencent.mm.util.Utils;
 
+import java.io.*;
+import java.util.Arrays;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -96,7 +98,7 @@ public class ResourceApkBuilder {
   }
 
   public void buildApkWithV3Sign(HashMap<String, Integer> compressData, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
-    insureFileNameV2();
+    insureFileNameV3();
     generalUnsignApk(compressData);
     if (use7zApk(compressData, mUnSignedApk, m7ZipApk)) {
       alignApk(m7ZipApk, mAlignedApk);
@@ -105,16 +107,16 @@ public class ResourceApkBuilder {
     }
 
     /*
-     * Caution: If you sign your app using APK Signature Scheme v2 and make further changes to the app,
+     * Caution: If you sign your app using APK Signature Scheme v3 and make further changes to the app,
      * the app's signature is invalidated.
-     * For this reason, use tools such as zipalign before signing your app using APK Signature Scheme v2, not after.
+     * For this reason, use tools such as zipalign before signing your app using APK Signature Scheme v3, not after.
      **/
     signApkV3(mAlignedApk, mSignedApk, minSDKVersion, signatureType);
-    copyFinalApkV2();
+    copyFinalApkV3();
   }
 
   public void buildApkWithV4Sign(HashMap<String, Integer> compressData, int minSDKVersion, InputParam.SignatureType signatureType) throws Exception {
-    insureFileNameV2();
+    insureFileNameV4();
     generalUnsignApk(compressData);
     if (use7zApk(compressData, mUnSignedApk, m7ZipApk)) {
       alignApk(m7ZipApk, mAlignedApk);
@@ -123,17 +125,31 @@ public class ResourceApkBuilder {
     }
 
     /*
-     * Caution: If you sign your app using APK Signature Scheme v2 and make further changes to the app,
+     * Caution: If you sign your app using APK Signature Scheme v4 and make further changes to the app,
      * the app's signature is invalidated.
-     * For this reason, use tools such as zipalign before signing your app using APK Signature Scheme v2, not after.
+     * For this reason, use tools such as zipalign before signing your app using APK Signature Scheme v4, not after.
      **/
     signApkV4(mAlignedApk, mSignedApk, minSDKVersion, signatureType);
-    copyFinalApkV2();
+    copyFinalApkV4();
   }
 
   private void copyFinalApkV2() throws IOException {
     if (mSignedApk.exists() && finalApkFile != null) {
       System.out.println(String.format("Backup Final APk(V2) to %s", finalApkFile));
+      FileOperation.copyFileUsingStream(mSignedApk, finalApkFile);
+    }
+  }
+
+  private void copyFinalApkV3() throws IOException {
+    if (mSignedApk.exists() && finalApkFile != null) {
+      System.out.println(String.format("Backup Final APk(V3) to %s", finalApkFile));
+      FileOperation.copyFileUsingStream(mSignedApk, finalApkFile);
+    }
+  }
+
+  private void copyFinalApkV4() throws IOException {
+    if (mSignedApk.exists() && finalApkFile != null) {
+      System.out.println(String.format("Backup Final APk(V4) to %s", finalApkFile));
       FileOperation.copyFileUsingStream(mSignedApk, finalApkFile);
     }
   }
@@ -148,6 +164,32 @@ public class ResourceApkBuilder {
   }
 
   private void insureFileNameV2() {
+    mUnSignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_unsigned.apk");
+    m7ZipApk = new File(mOutDir.getAbsolutePath(), mApkName + "_7zip_unsigned.apk");
+    if (config.mUse7zip) {
+      mAlignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_7zip_aligned_unsigned.apk");
+      mSignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_7zip_aligned_signed.apk");
+    } else {
+      mAlignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_aligned_unsigned.apk");
+      mSignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_aligned_signed.apk");
+    }
+    m7zipOutPutDir = new File(mOutDir.getAbsolutePath(), TypedValue.OUT_7ZIP_FILE_PATH);
+  }
+
+  private void insureFileNameV3() {
+    mUnSignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_unsigned.apk");
+    m7ZipApk = new File(mOutDir.getAbsolutePath(), mApkName + "_7zip_unsigned.apk");
+    if (config.mUse7zip) {
+      mAlignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_7zip_aligned_unsigned.apk");
+      mSignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_7zip_aligned_signed.apk");
+    } else {
+      mAlignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_aligned_unsigned.apk");
+      mSignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_aligned_signed.apk");
+    }
+    m7zipOutPutDir = new File(mOutDir.getAbsolutePath(), TypedValue.OUT_7ZIP_FILE_PATH);
+  }
+
+  private void insureFileNameV4() {
     mUnSignedApk = new File(mOutDir.getAbsolutePath(), mApkName + "_unsigned.apk");
     m7ZipApk = new File(mOutDir.getAbsolutePath(), mApkName + "_7zip_unsigned.apk");
     if (config.mUse7zip) {
@@ -258,7 +300,7 @@ public class ResourceApkBuilder {
       System.out.printf("signing apk: %s\n", signedApk.getName());
       signWithV3Sign(unSignedApk, signedApk, minSDKVersion, signatureType);
       if (!signedApk.exists()) {
-        throw new IOException("Can't Generate signed APK v2. Plz check your v2sign info is correct.");
+        throw new IOException("Can't Generate signed APK v3. Plz check your v3sign info is correct.");
       }
     }
   }
@@ -268,7 +310,7 @@ public class ResourceApkBuilder {
       System.out.printf("signing apk: %s\n", signedApk.getName());
       signWithV4Sign(unSignedApk, signedApk, minSDKVersion, signatureType);
       if (!signedApk.exists()) {
-        throw new IOException("Can't Generate signed APK v2. Plz check your v2sign info is correct.");
+        throw new IOException("Can't Generate signed APK v4. Plz check your v4sign info is correct.");
       }
     }
   }
@@ -280,14 +322,18 @@ public class ResourceApkBuilder {
         config.mSignatureFile.getAbsolutePath(),
         "--ks-pass",
         "pass:" + config.mStorePass,
+        "--v2-signing-enabled",
+        "true",
+        "--v3-signing-enabled",
+        "false",
+        "--v4-signing-enabled",
+        "false",
         "--min-sdk-version",
         String.valueOf(minSDKVersion),
         "--ks-key-alias",
         config.mStoreAlias,
         "--key-pass",
         "pass:" + config.mKeyPass,
-        "--v2-signing-enabled",
-        String.valueOf(signatureType == InputParam.SignatureType.SchemaV2),
         "--out",
         signedApk.getAbsolutePath(),
         unSignedApk.getAbsolutePath()
@@ -308,8 +354,12 @@ public class ResourceApkBuilder {
         config.mStoreAlias,
         "--key-pass",
         "pass:" + config.mKeyPass,
+        "--v2-signing-enabled",
+        "true",
         "--v3-signing-enabled",
-        String.valueOf(signatureType == InputParam.SignatureType.SchemaV3),
+        "true",
+        "--v4-signing-enabled",
+        "false",
         "--out",
         signedApk.getAbsolutePath(),
         unSignedApk.getAbsolutePath()
@@ -330,8 +380,12 @@ public class ResourceApkBuilder {
         config.mStoreAlias,
         "--key-pass",
         "pass:" + config.mKeyPass,
+        "--v2-signing-enabled",
+        "true",
+        "--v3-signing-enabled",
+        "true",
         "--v4-signing-enabled",
-        String.valueOf(signatureType == InputParam.SignatureType.SchemaV4),
+        "true",
         "--out",
         signedApk.getAbsolutePath(),
         unSignedApk.getAbsolutePath()
@@ -358,7 +412,6 @@ public class ResourceApkBuilder {
         config.mStorePass,
         "-keypass",
         config.mKeyPass,
-        "--v1-signing-enabled true",
         "-signedjar",
         signedApk.getAbsolutePath(),
         unSignedApk.getAbsolutePath(),

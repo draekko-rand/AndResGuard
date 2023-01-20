@@ -21,6 +21,7 @@ import com.mindprod.ledatastream.LEDataInputStream;
 import com.tencent.mm.androlib.AndrolibException;
 import com.tencent.mm.androlib.res.data.ResPackage;
 import com.tencent.mm.androlib.res.data.ResType;
+import com.tencent.mm.androlib.res.util.CountingInputStream;
 import com.tencent.mm.util.ExtDataInput;
 import java.io.EOFException;
 import java.io.IOException;
@@ -30,7 +31,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.apache.commons.io.input.CountingInputStream;
 
 /**
  * 其实应该是原来有，并且在白名单里面的才去掉！现在没有判断是否在白名单中

@@ -40,12 +40,14 @@ class OptionsParser {
     private String mPutBackLastOptionValue;
     private String mLastOptionOriginalForm;
     private String mPutBackLastOptionOriginalForm;
+
     /**
      * Constructs a new {@code OptionsParser} initialized with the provided command-line.
      */
     public OptionsParser(String[] params) {
         mParams = params.clone();
     }
+
     /**
      * Returns the name (without leading dashes) of the next option (starting with the very first
      * option) or {@code null} if there are no options left.
@@ -63,6 +65,7 @@ class OptionsParser {
             // Not an option
             return null;
         }
+
         mPutBackIndex = mIndex;
         mIndex++;
         mPutBackLastOptionOriginalForm = mLastOptionOriginalForm;
@@ -88,6 +91,7 @@ class OptionsParser {
             return param.substring("-".length());
         }
     }
+
     /**
      * Undoes the last call to nextOption(), if one was made.  This allows callers to unwind state
      * so as not to eat up an option that is meant to be processed elsewhere.
@@ -104,6 +108,7 @@ class OptionsParser {
     public String getOptionOriginalForm() {
         return mLastOptionOriginalForm;
     }
+
     /**
      * Returns the value of the current option, throwing an exception if the value is missing.
      */
@@ -127,6 +132,7 @@ class OptionsParser {
         mIndex++;
         return param;
     }
+
     /**
      * Returns the value of the current numeric option, throwing an exception if the value is
      * missing or is not numeric.
@@ -141,6 +147,7 @@ class OptionsParser {
                             + ") must be a decimal number: " + value);
         }
     }
+
     /**
      * Gets the value of the current boolean option. Boolean options are not required to have
      * explicitly specified values.
@@ -159,10 +166,12 @@ class OptionsParser {
                     "Unsupported value for " + mLastOptionOriginalForm + ": " + stringValue
                             + ". Only true or false supported.");
         }
+
         // --option (true|false) form OR just --option
         if (mIndex >= mParams.length) {
             return defaultValue;
         }
+
         String stringValue = mParams[mIndex];
         if ("true".equals(stringValue)) {
             mIndex++;
@@ -174,6 +183,7 @@ class OptionsParser {
             return defaultValue;
         }
     }
+
     /**
      * Returns the remaining command-line parameters. This is intended to be invoked once
      * {@link #nextOption()} returns {@code null}.
@@ -190,11 +200,13 @@ class OptionsParser {
             return Arrays.copyOfRange(mParams, mIndex, mParams.length);
         }
     }
+
     /**
      * Indicates that an error was encountered while parsing command-line options.
      */
     public static class OptionsException extends Exception {
         private static final long serialVersionUID = 1L;
+
         public OptionsException(String message) {
             super(message);
         }

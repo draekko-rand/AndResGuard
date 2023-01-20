@@ -100,7 +100,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.google.gradle:osdetector-gradle-plugin:1.7.1'
-        classpath 'org.conscrypt:conscrypt-openjdk-uber:2.5.2'
         classpath files('/path-to/libs/AndResGuard-core-1.2.22.jar')
         classpath files('/path-to/libs/AndResGuard-gradle-plugin-1.2.22.jar')
     }

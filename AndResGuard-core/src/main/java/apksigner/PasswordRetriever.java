@@ -48,13 +48,18 @@ import java.util.Map;
  */
 public class PasswordRetriever implements AutoCloseable {
     public static final String SPEC_STDIN = "stdin";
+
     /** Character encoding used by the console or {@code null} if not known. */
     private final Charset mConsoleEncoding;
+
     private final Map<File, InputStream> mFileInputStreams = new HashMap<>();
+
     private boolean mClosed;
+
     public PasswordRetriever() {
         mConsoleEncoding = getConsoleEncoding();
     }
+
     /**
      * Returns the passwords described by the provided spec. The reason there may be more than one
      * password is compatibility with {@code keytool} and {@code jarsigner} which in certain cases
@@ -131,6 +136,7 @@ public class PasswordRetriever implements AutoCloseable {
         // As a result, we cannot auto-detect the console's encoding and thus rely on the user to
         // explicitly provide it to apksigner as a command-line parameter (and passed into this
         // method as additionalPwdEncodings), if the password is using non-ASCII characters.
+
         assertNotClosed();
         if (spec.startsWith("pass:")) {
             char[] pwd = spec.substring("pass:".length()).toCharArray();
@@ -185,6 +191,7 @@ public class PasswordRetriever implements AutoCloseable {
             throw new IOException("Unsupported password spec for " + description + ": " + spec);
         }
     }
+
     /**
      * Returns the provided password and all password variants derived from the password. The
      * resulting list is guaranteed to contain at least one element.
@@ -194,6 +201,7 @@ public class PasswordRetriever implements AutoCloseable {
         addPasswords(passwords, pwd, additionalEncodings);
         return passwords;
     }
+
     /**
      * Returns the provided password and all password variants derived from the password. The
      * resulting list is guaranteed to contain at least one element.
@@ -204,15 +212,18 @@ public class PasswordRetriever implements AutoCloseable {
             byte[] encodedPwd, Charset encodingForDecoding,
             Charset... additionalEncodings) {
         List<char[]> passwords = new ArrayList<>(4);
+
         // Decode password and add it and its variants to the list
         try {
             char[] pwd = decodePassword(encodedPwd, encodingForDecoding);
             addPasswords(passwords, pwd, additionalEncodings);
         } catch (IOException ignored) {}
+
         // Add the original encoded form
         addPassword(passwords, castBytesToChars(encodedPwd));
         return passwords;
     }
+
     /**
      * Adds the provided password and its variants to the provided list of passwords.
      *
@@ -229,8 +240,10 @@ public class PasswordRetriever implements AutoCloseable {
                 } catch (IOException ignored) {}
             }
         }
+
         // Verbatim password
         addPassword(passwords, pwd);
+
         // Password encoded using the console encoding and upcast into char[]
         if (mConsoleEncoding != null) {
             try {
@@ -238,12 +251,14 @@ public class PasswordRetriever implements AutoCloseable {
                 addPassword(passwords, encodedPwd);
             } catch (IOException ignored) {}
         }
+
         // Password encoded using the JVM default character encoding and upcast into char[]
         try {
             char[] encodedPwd = castBytesToChars(encodePassword(pwd, Charset.defaultCharset()));
             addPassword(passwords, encodedPwd);
         } catch (IOException ignored) {}
     }
+
     /**
      * Adds the provided password to the provided list. Does nothing if the password is already in
      * the list.
@@ -256,6 +271,7 @@ public class PasswordRetriever implements AutoCloseable {
         }
         passwords.add(password);
     }
+
     private static byte[] encodePassword(char[] pwd, Charset cs) throws IOException {
         ByteBuffer pwdBytes =
                 cs.newEncoder()
@@ -266,6 +282,7 @@ public class PasswordRetriever implements AutoCloseable {
         pwdBytes.get(encoded);
         return encoded;
     }
+
     private static char[] decodePassword(byte[] pwdBytes, Charset encoding) throws IOException {
         CharBuffer pwdChars =
                 encoding.newDecoder()
@@ -276,6 +293,7 @@ public class PasswordRetriever implements AutoCloseable {
         pwdChars.get(result);
         return result;
     }
+
     /**
      * Upcasts each {@code byte} in the provided array of bytes to a {@code char} and returns the
      * resulting array of characters.
@@ -284,16 +302,19 @@ public class PasswordRetriever implements AutoCloseable {
         if (bytes == null) {
             return null;
         }
+
         char[] chars = new char[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
             chars[i] = (char) (bytes[i] & 0xff);
         }
         return chars;
     }
+
     private static boolean isJava9OrHigherErrOnTheSideOfCaution() {
         // Before Java 9, this string is of major.minor form, such as "1.8" for Java 8.
         // From Java 9 onwards, this is a single number: major, such as "9" for Java 9.
         // See JEP 223: New Version-String Scheme.
+
         String versionString = System.getProperty("java.specification.version");
         if (versionString == null) {
             // Better safe than sorry
@@ -301,6 +322,7 @@ public class PasswordRetriever implements AutoCloseable {
         }
         return !versionString.startsWith("1.");
     }
+
     /**
      * Returns the character encoding used by the console or {@code null} if the encoding is not
      * known.
@@ -321,16 +343,19 @@ public class PasswordRetriever implements AutoCloseable {
         } catch (ReflectiveOperationException ignored) {
             return null;
         }
+
         if (consoleCharsetName == null) {
             // Console encoding is the same as this JVM's default encoding
             return Charset.defaultCharset();
         }
+
         try {
             return getCharsetByName(consoleCharsetName);
         } catch (IllegalArgumentException e) {
             return null;
         }
     }
+
     public static Charset getCharsetByName(String charsetName) throws IllegalArgumentException {
         // On Windows 10, cp65001 is the UTF-8 code page. For some reason, popular JVMs don't
         // have a mapping for cp65001...
@@ -339,6 +364,7 @@ public class PasswordRetriever implements AutoCloseable {
         }
         return Charset.forName(charsetName);
     }
+
     private static byte[] readEncodedPassword(InputStream in) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         int b;
@@ -350,6 +376,7 @@ public class PasswordRetriever implements AutoCloseable {
                 if ((next == -1) || (next == '\n')) {
                     break;
                 }
+
                 if (!(in instanceof PushbackInputStream)) {
                     in = new PushbackInputStream(in);
                 }
@@ -359,11 +386,13 @@ public class PasswordRetriever implements AutoCloseable {
         }
         return result.toByteArray();
     }
+
     private void assertNotClosed() {
         if (mClosed) {
             throw new IllegalStateException("Closed");
         }
     }
+
     @Override
     public void close() {
         for (InputStream in : mFileInputStreams.values()) {
