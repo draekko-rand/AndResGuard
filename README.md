@@ -1,6 +1,6 @@
 # AndResGuard
 
-### **Forked From Shwenzhang, bug fixes and PR patches from original code tree, updated apktoolsigner for v3/v4 signing**
+### **Forked From Shwenzhang, bug fixes and PR patches from original code tree, updated apktoolsigner for v4 signatures, separated signing schemas**
 
 `AndResGuard` is a tooling for reducing your apk size, it works like the `ProGuard` for Java source code, but only aim at the resource files. It changes `res/drawable/wechat` to `r/d/a`, and renames the resource file `wechat.png` to `a.png`. Finally, it repackages the apk with 7zip, which can reduce the package size obviously.
 

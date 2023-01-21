@@ -269,9 +269,9 @@ public class StringBlock {
     int i;
     for (i = 0; i < stringCount; i++) {
       stringOffsets[i] = offset;
-      //如果找不到即没混淆这一项,直接拷贝
+      //If you can't find it, you don't confuse this item, just copy it directly
       if (tableProguardMap.get(i) == null) {
-        //需要区分是否是最后一项
+        //Need to distinguish whether it is the last item
         int copyLen = (i == (stringCount - 1)) ? (block.m_strings.length - block.m_stringOffsets[i])
             : (block.m_stringOffsets[i + 1] - block.m_stringOffsets[i]);
         System.arraycopy(block.m_strings, block.m_stringOffsets[i], strings, offset, copyLen);
@@ -315,7 +315,7 @@ public class StringBlock {
         }
       }
     }
-    //要保证string size 是4的倍数,要补零
+    //To ensure that the string size is a multiple of 4, zero padding is required
     int size = totalSize - stringsOffset;
     if ((size % 4) != 0) {
       int add = 4 - (size % 4);
@@ -324,7 +324,7 @@ public class StringBlock {
         totalSize++;
       }
     }
-    //因为是int的,如果之前的不为0
+    //Because it is an int, if the previous one is not 0
     if (stylesOffset != 0) {
       stylesOffset = totalSize;
       totalSize += block.m_styles.length * 4;

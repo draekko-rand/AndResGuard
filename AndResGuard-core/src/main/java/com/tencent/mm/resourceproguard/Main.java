@@ -23,7 +23,7 @@ public class Main {
   protected static long mBeginTime;
 
   /**
-   * 是否通过命令行方式设置
+   * Whether to set via the command line
    **/
   public boolean mSetSignThroughCmd;
   public boolean mSetMappingThroughCmd;

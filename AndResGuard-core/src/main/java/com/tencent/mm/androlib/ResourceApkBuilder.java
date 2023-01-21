@@ -27,9 +27,12 @@ import static com.tencent.mm.resourceproguard.InputParam.SignatureType.SchemaV4;
  * @author shwenzhang
  *     modified:
  * @author jonychina162
- *     为了使用v2签名，引入了google v2sign 模块
- *     由于使用v2签名，会对整个包除了签名块验证完整性，即除了签名块的内容在签名之后包其他内容不允许再改动，因此修改了原有的签名逻辑，
- *     现有逻辑：1 zipalign 2.sign 。具体请参考buildApkV2sign
+ * In order to use v2 signature, the google v2sign module is introduced
+ * Since the v2 signature is used, the integrity of the entire package will
+ * be verified except for the signature block, that is, the content of the
+ * package other than the content of the signature block is not allowed to
+ * be changed after signing, so the original signature logic is modified.
+ * Existing logic: 1 zipalign 2.sign. For details, please refer to buildApkV2sign
  */
 public class ResourceApkBuilder {
 
@@ -218,11 +221,11 @@ public class ResourceApkBuilder {
     }
     System.out.printf("use 7zip to repackage: %s, will cost much more time\n", outputAPK.getName());
     FileOperation.unZipAPk(originalAPK.getAbsolutePath(), m7zipOutPutDir.getAbsolutePath());
-    //首先一次性生成一个全部都是压缩的安装包
+    //First generate a one-time installation package that is all compressed
     generalRaw7zip(outputAPK);
 
     ArrayList<String> storedFiles = new ArrayList<>();
-    //对于不压缩的要update回去
+    //For uncompressed ones, update them back
     for (String name : compressData.keySet()) {
       File file = new File(m7zipOutPutDir.getAbsolutePath(), name);
       if (!file.exists()) {
@@ -475,13 +478,13 @@ public class ResourceApkBuilder {
     }
 
     File destResDir = new File(mOutDir.getAbsolutePath(), "res");
-    //添加修改后的res文件
+    //Add the modified res file
     if (!config.mKeepRoot && FileOperation.getlist(destResDir) == 0) {
       destResDir = new File(mOutDir.getAbsolutePath(), TypedValue.RES_FILE_PATH);
     }
 
     /*
-     * NOTE:文件数量应该是一样的，如果不一样肯定有问题
+     * NOTE: The number of files should be the same, if not, there must be a problem
      */
     File rawResDir = new File(tempOutDir.getAbsolutePath() + File.separator + "res");
     System.out.printf("DestResDir %d rawResDir %d\n",
@@ -499,7 +502,7 @@ public class ResourceApkBuilder {
       System.err.printf("Missing res files, path=%s\n", destResDir.getAbsolutePath());
       System.exit(-1);
     }
-    //这个需要检查混淆前混淆后，两个res的文件数量是否相等
+    //This needs to check whether the number of files of the two res is equal before and after obfuscation
     collectFiles.add(destResDir);
     File rawARSCFile = new File(mOutDir.getAbsolutePath() + File.separator + "resources.arsc");
     if (!rawARSCFile.exists()) {

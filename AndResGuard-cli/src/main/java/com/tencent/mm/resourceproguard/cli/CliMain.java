@@ -27,6 +27,7 @@ public class CliMain extends Main {
   private static final String ARG_SIGNATURE = "-signature";
   private static final String ARG_KEEPMAPPING = "-mapping";
   private static final String ARG_REPACKAGE = "-repackage";
+  private static final String ARG_FIXEDRESNAME = "-fixedresname";
   private static final String ARG_SIGNATURE_TYPE = "-signatureType";
   private static final String VALUE_SIGNATURE_TYPE_V1 = "v1";
   private static final String VALUE_SIGNATURE_TYPE_V2 = "v2";
@@ -225,9 +226,10 @@ public class CliMain extends Main {
       final File finalApkFile = readArgs.getFinalApkFile();
       final String apkFileName = readArgs.getApkFileName();
       final InputParam.SignatureType signatureType = readArgs.getSignatureType();
-      loadConfigFromXml(configFile, signatureFile, mappingFile, keypass, storealias, storepass);
+      final String fixedResName = readArgs.getFixedResName();
+      loadConfigFromXml(configFile, signatureFile, mappingFile, keypass, storealias, storepass, fixedResName);
 
-      //对于repackage模式，不管之前的东东，直接return
+      //For repackage mode, return directly regardless of the previous stuff
       if (signedFile != null) {
         ResourceRepackage repackage = new ResourceRepackage(config.mZipalignPath,
             config.m7zipPath,
@@ -252,7 +254,7 @@ public class CliMain extends Main {
   }
 
   private void loadConfigFromXml(
-      File configFile, File signatureFile, File mappingFile, String keypass, String storealias, String storepass) {
+      File configFile, File signatureFile, File mappingFile, String keypass, String storealias, String storepass, String fixedResName) {
     if (configFile == null) {
       configFile = new File(mRunningLocation + File.separator + TypedValue.CONFIG_FILE);
       if (!configFile.exists()) {
@@ -262,7 +264,7 @@ public class CliMain extends Main {
       }
     }
     try {
-      //不需要检查命令行的设置
+      //No need to check command line settings
       if (!mSetSignThroughCmd) {
         signatureFile = null;
       }
@@ -276,7 +278,8 @@ public class CliMain extends Main {
           signatureFile,
           keypass,
           storealias,
-          storepass
+          storepass,
+          fixedResName
       );
     } catch (IOException | ParserConfigurationException | SAXException e) {
       e.printStackTrace();
@@ -300,6 +303,7 @@ public class CliMain extends Main {
     private File outputFile;
     private File finalApkFile;
     private String apkFileName;
+    private String fixedResName;
     private File signatureFile;
     private File mappingFile;
     private String keypass;
@@ -338,6 +342,10 @@ public class CliMain extends Main {
 
     public String getKeypass() {
       return keypass;
+    }
+
+    public String getFixedResName() {
+      return fixedResName;
     }
 
     public String getStorealias() {
@@ -395,7 +403,7 @@ public class CliMain extends Main {
           }
           System.out.printf("special final apk file path: %s\n", finalApkFile.getAbsolutePath());
         } else if (arg.equals(ARG_SIGNATURE)) {
-          //需要检查是否有四个参数
+          //Need to check if there are four parameters
           if (index == args.length - 1) {
             System.err.println("Missing signature data argument, should be "
                                + ARG_SIGNATURE
@@ -403,7 +411,7 @@ public class CliMain extends Main {
             goToError();
           }
 
-          //在后面设置的时候会检查文件是否存在
+          //When setting later, it will check whether the file exists
           signatureFile = new File(args[++index]);
 
           if (index == args.length - 1) {
@@ -457,7 +465,7 @@ public class CliMain extends Main {
             System.err.println("Missing mapping file argument");
             goToError();
           }
-          //在后面设置的时候会检查文件是否存在
+          //When setting later, it will check whether the file exists
           mappingFile = new File(args[++index]);
           mSetMappingThroughCmd = true;
         } else if (arg.equals(ARG_7ZIP)) {
@@ -474,12 +482,20 @@ public class CliMain extends Main {
 
           mZipalignPath = args[++index];
         } else if (arg.equals(ARG_REPACKAGE)) {
-          //这个模式的话就直接干活了，不会再理其他命令！
+          //In this mode, you can work directly and ignore other commands!
           if (index == args.length - 1) {
             System.err.println("Missing the signed apk file argument");
             goToError();
           }
           signedFile = args[++index];
+        } else if (arg.equals(ARG_FIXEDRESNAME)) {
+          //In this mode, you can work directly and ignore other commands!
+          if (index == args.length - 1) {
+            System.err.println("Missing the fixed resource name argument");
+            goToError();
+          }
+          fixedResName = args[++index];
+          System.out.println("fixedResName " + fixedResName);
         } else {
           apkFileName = arg;
         }

@@ -7,7 +7,6 @@ public class ExtDataOutput extends DataOutputDelegate {
 
   public ExtDataOutput(DataOutput delegate) {
     super(delegate);
-    // TODO Auto-generated constructor stub
   }
 
   public void writeIntArray(int[] array) throws IOException {

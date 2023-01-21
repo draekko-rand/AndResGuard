@@ -50,7 +50,8 @@ public class ResourceRepackage {
   }
 
   /**
-   * 这边有点不太一样，就是当输出目录存在的时候是不会强制删除目录的
+   * There is a little difference here, that is, when the output directory exists,
+   * the directory will not be forcibly deleted.
    *
    * @throws IOException
    */
@@ -60,10 +61,10 @@ public class ResourceRepackage {
           mSignedApk.getAbsolutePath()
       ));
     }
-    //需要自己安装7zip
+    //You need to install 7zip yourself
     String apkBasename = mSignedApk.getName();
     mApkName = apkBasename.substring(0, apkBasename.indexOf(".apk"));
-    //如果外面设过，就不用设了
+    // If it has been set up outside, there is no need to set it up
     if (mOutDir == null) {
       mOutDir = new File(mSignedApk.getAbsoluteFile().getParent(), mApkName);
     }
@@ -73,7 +74,8 @@ public class ResourceRepackage {
 
     m7zipOutPutDir = new File(mOutDir.getAbsolutePath(), TypedValue.OUT_7ZIP_FILE_PATH);
     mStoredOutPutDir = new File(mOutDir.getAbsolutePath(), "storefiles");
-    //删除目录,因为之前的方法是把整个输出目录都删除，所以不会有问题，现在不会，所以要单独删
+    //Delete the directory, because the previous method is to delete the entire output directory,
+    //so there will be no problem, not now, so delete it separately
     FileOperation.deleteDir(m7zipOutPutDir);
     FileOperation.deleteDir(mStoredOutPutDir);
     FileOperation.deleteDir(mSignedWith7ZipApk);
@@ -85,10 +87,10 @@ public class ResourceRepackage {
     HashMap<String, Integer> compressData = FileOperation.unZipAPk(mSignedApk.getAbsolutePath(),
         m7zipOutPutDir.getAbsolutePath()
     );
-    //首先一次性生成一个全部都是压缩的安装包
+    //First generate a one-time installation package that is all compressed
     generalRaw7zip();
     ArrayList<String> storedFiles = new ArrayList<>();
-    //对于不压缩的要update回去
+    //For uncompressed ones, update them back
     for (String name : compressData.keySet()) {
       File file = new File(m7zipOutPutDir.getAbsolutePath(), name);
       if (!file.exists()) {

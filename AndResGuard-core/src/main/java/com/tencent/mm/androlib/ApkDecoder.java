@@ -51,11 +51,9 @@ public class ApkDecoder {
     }
     Path resPath = mRawResFile.toPath();
     Path destPath = mOutResFile.toPath();
-
     for (Path path : mRawResourceFiles) {
       Path relativePath = resPath.relativize(path);
       Path dest = destPath.resolve(relativePath);
-
       System.out.printf("copy res file not in resources.arsc file:%s\n", relativePath.toString());
       FileOperation.copyFileUsingStream(path.toFile(), dest.toFile());
     }
@@ -84,7 +82,7 @@ public class ApkDecoder {
     System.out.printf("unziping apk to %s\n", unZipDest);
     mCompressData = FileOperation.unZipAPk(apkFile.getAbsoluteFile().getAbsolutePath(), unZipDest);
     dealWithCompressConfig();
-    //将res混淆成r
+    //obfuscate res into r
     if (!config.mKeepRoot) {
       mOutResFile = new File(mOutDir.getAbsolutePath() + File.separator + TypedValue.RES_FILE_PATH);
     } else {
@@ -96,7 +94,7 @@ public class ApkDecoder {
       }
     }
 
-    //这个需要混淆各个文件夹
+    //This needs to confuse the various folders
     mRawResFile = new File(mOutDir.getAbsoluteFile().getAbsolutePath()
                            + File.separator
                            + TypedValue.UNZIP_FILE_PATH
@@ -110,7 +108,7 @@ public class ApkDecoder {
       }
     }
 
-    //这里纪录原始res目录的文件
+    //Record the file of the original res directory here
     Files.walkFileTree(mRawResFile.toPath(), new ResourceFilesVisitor());
 
     if (!mRawResFile.exists() || !mRawResFile.isDirectory()) {
@@ -134,7 +132,7 @@ public class ApkDecoder {
   }
 
   /**
-   * 根据config来修改压缩的值
+   * Modify the compressed value according to config
    */
   private void dealWithCompressConfig() {
     if (config.mUseCompress) {
@@ -202,7 +200,7 @@ public class ApkDecoder {
       RawARSCDecoder.decode(apkFile.getDirectory().getFileInput("resources.arsc"));
       ResPackage[] pkgs = ARSCDecoder.decode(apkFile.getDirectory().getFileInput("resources.arsc"), this);
 
-      //把没有纪录在resources.arsc的资源文件也拷进dest目录
+      //Copy the resource files that are not recorded in resources.arsc into the dest directory
       copyOtherResFiles();
 
       ARSCDecoder.write(apkFile.getDirectory().getFileInput("resources.arsc"), this, pkgs);

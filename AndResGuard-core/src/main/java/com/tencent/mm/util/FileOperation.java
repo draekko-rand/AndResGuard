@@ -170,7 +170,7 @@ public class FileOperation {
         if (parent != null && (!parent.exists())) {
           parent.mkdirs();
         }
-        //要用linux的斜杠
+        //Use linux slashes
         String compatibaleresult = entry.getName();
         if (compatibaleresult.contains("\\")) {
           compatibaleresult = compatibaleresult.replace("\\", "/");
@@ -236,12 +236,12 @@ public class FileOperation {
       }
     } else {
       final byte[] fileContents = readContents(resFile);
-      //这里需要强转成linux格式，果然坑！！
+      //It needs to be converted to linux format here
       if (rootpath.contains("\\")) {
         rootpath = rootpath.replace("\\", "/");
       }
       if (!compressData.containsKey(rootpath)) {
-        System.err.printf(String.format("do not have the compress data path =%s in resource.asrc\n", rootpath));
+        System.err.printf(String.format("do not have the compress data path = %s in resource.asrc\n", rootpath));
         //throw new IOException(String.format("do not have the compress data path=%s", rootpath));
         return;
       }
@@ -254,7 +254,7 @@ public class FileOperation {
         entry.setMethod(ZipEntry.STORED);
         entry.setSize(fileContents.length);
         final CRC32 checksumCalculator = new CRC32();
-        checksumCalculator.update(fileContents);
+        checksumCalculator.update(fileContents, 0, fileContents.length);
         entry.setCrc(checksumCalculator.getValue());
       }
       zipout.putNextEntry(entry);

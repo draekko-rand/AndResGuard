@@ -39,6 +39,7 @@ public class Configuration {
   private static final String MAPPING_ISSUE = "keepmapping";
   private static final String SIGN_ISSUE = "sign";
   private static final String ATTR_7ZIP = "seventzip";
+  private static final String ATTR_FIXEDRESNAME = "fixedresname";
   private static final String ATTR_KEEPROOT = "keeproot";
   private static final String ATTR_SIGNFILE = "metaname";
   private static final String MERGE_DUPLICATED_RES = "mergeDuplicatedRes";
@@ -92,7 +93,8 @@ public class Configuration {
       File signatureFile,
       String keypass,
       String storealias,
-      String storepass) throws IOException, ParserConfigurationException, SAXException {
+      String storepass,
+      String fixedResName) throws IOException, ParserConfigurationException, SAXException {
     mWhiteList = new HashMap<>();
     mOldResMapping = new HashMap<>();
     mOldFileMapping = new HashMap<>();
@@ -108,6 +110,7 @@ public class Configuration {
     readXmlConfig(config);
     this.m7zipPath = sevenzipPath;
     this.mZipalignPath = zipAlignPath;
+    this.mFixedResName = fixedResName;
   }
 
   /**
@@ -252,8 +255,8 @@ public class Configuration {
         Node child = childNodes.item(j);
         if (child.getNodeType() == Node.ELEMENT_NODE) {
           Element check = (Element) child;
-          String vaule = check.getAttribute(ATTR_VALUE);
-          addWhiteList(vaule);
+          String value = check.getAttribute(ATTR_VALUE);
+          addWhiteList(value);
         }
       }
     }
@@ -271,10 +274,10 @@ public class Configuration {
           item
       ));
     }
-    //先去掉空格
+    //remove spaces first
     item = item.trim();
     String packageName = item.substring(0, packagePos);
-    //不能通过lastDot
+    //Can't pass lastDot
     int nextDot = item.indexOf(".", packagePos + 3);
     String typeName = item.substring(packagePos + 3, nextDot);
     String name = item.substring(nextDot + 1);
@@ -315,26 +318,26 @@ public class Configuration {
         if (child.getNodeType() == Node.ELEMENT_NODE) {
           Element check = (Element) child;
           String tagName = check.getTagName();
-          String vaule = check.getAttribute(ATTR_VALUE);
-          if (vaule.length() == 0) {
+          String value = check.getAttribute(ATTR_VALUE);
+          if (value.length() == 0) {
             throw new IOException(String.format("Invalid config file: Missing required attribute %s\n", ATTR_VALUE));
           }
 
           switch (tagName) {
             case ATTR_SIGNFILE_PATH:
-              char ch = vaule.charAt(0);
+              char ch = value.charAt(0);
               switch (ch) {
                 // supports the writting style like ~/.android/debug.keystore. the symbol ~ represent the home directory of the current user.
                 case '~':
-                  mSignatureFile = new File(String.format("%s%s", System.getProperty("user.home"), vaule.substring(1)));
+                  mSignatureFile = new File(String.format("%s%s", System.getProperty("user.home"), value.substring(1)));
                   break;
                 // relative to the directory of the xml config file.
                 case '.':
-                  mSignatureFile = new File(xmlConfigFileParentFile, vaule);
+                  mSignatureFile = new File(xmlConfigFileParentFile, value);
                   break;
                 // keep the origin logical.
                 default:
-                  mSignatureFile = new File(vaule);
+                  mSignatureFile = new File(value);
               }
               if (!mSignatureFile.isFile()) {
                 throw new IOException(String.format("the signature file do not exit. raw path= %s\n",
@@ -343,15 +346,15 @@ public class Configuration {
               }
               break;
             case ATTR_SIGNFILE_STOREPASS:
-              mStorePass = vaule;
+              mStorePass = value;
               mStorePass = mStorePass.trim();
               break;
             case ATTR_SIGNFILE_KEYPASS:
-              mKeyPass = vaule;
+              mKeyPass = value;
               mKeyPass = mKeyPass.trim();
               break;
             case ATTR_SIGNFILE_ALIAS:
-              mStoreAlias = vaule;
+              mStoreAlias = value;
               mStoreAlias = mStoreAlias.trim();
               break;
             default:
@@ -415,25 +418,29 @@ public class Configuration {
         if (child.getNodeType() == Node.ELEMENT_NODE) {
           Element check = (Element) child;
           String tagName = check.getTagName();
-          String vaule = check.getAttribute(ATTR_VALUE);
-          if (vaule.length() == 0) {
+          String value = check.getAttribute(ATTR_VALUE);
+          if (value.length() == 0) {
             throw new IOException(String.format("Invalid config file: Missing required attribute %s\n", ATTR_VALUE));
           }
 
           switch (tagName) {
             case ATTR_7ZIP:
-              mUse7zip = vaule.equals("true");
+              mUse7zip = value.equals("true");
               break;
             case ATTR_KEEPROOT:
-              mKeepRoot = vaule.equals("true");
+              mKeepRoot = value.equals("true");
               System.out.println("mKeepRoot " + mKeepRoot);
               break;
             case MERGE_DUPLICATED_RES:
-              mMergeDuplicatedRes = vaule.equals("true");
+              mMergeDuplicatedRes = value.equals("true");
               System.out.println("mMergeDuplicatedRes " + mMergeDuplicatedRes);
               break;
+            case ATTR_FIXEDRESNAME:
+              mFixedResName = value.trim();
+              System.out.println("mFixedResName " + mFixedResName);
+              break;
             case ATTR_SIGNFILE:
-              mMetaName = vaule.trim();
+              mMetaName = value.trim();
               break;
             default:
               System.err.println("unknown tag " + tagName);
@@ -481,11 +488,11 @@ public class Configuration {
             nameAfter = nameAfter.trim();
             nameBefore = nameBefore.trim();
 
-            //如果有这个的话，那就是mOldFileMapping
+            //If there is one, it is mOldFileMapping
             if (line.contains("/")) {
               mOldFileMapping.put(nameBefore, nameAfter);
             } else {
-              //这里是resid的mapping
+              //Here is the mapping of resid
               int packagePos = nameBefore.indexOf(".R.");
               if (packagePos == -1) {
                 throw new IOException(String.format("the old mapping file packagename is malformed, "

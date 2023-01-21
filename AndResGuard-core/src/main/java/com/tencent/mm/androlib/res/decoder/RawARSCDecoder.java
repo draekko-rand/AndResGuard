@@ -33,7 +33,8 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * 其实应该是原来有，并且在白名单里面的才去掉！现在没有判断是否在白名单中
+ * In fact, it should be removed before it exists and is in the white list!
+ * Now there is no judgment whether it is in the whitelist
  *
  * @author shwenzhang
  */
@@ -197,7 +198,7 @@ public class RawARSCDecoder {
   }
 
   /**
-   * 需要防止由于某些非常恶心的白名单，导致出现重复id
+   * Need to prevent duplicate ids due to some very ugly whitelists
    *
    * @throws IOException
    * @throws AndrolibException

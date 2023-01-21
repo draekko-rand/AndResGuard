@@ -110,23 +110,23 @@ class AndResGuardTask extends DefaultTask {
       }
     }
 
-    InputParam.Builder builder = new InputParam.Builder()
-        .setMappingFile(configuration.mappingFile)
-        .setWhiteList(whiteListFullName)
-        .setUse7zip(configuration.use7zip)
-        .setMetaName(configuration.metaName)
-        .setFixedResName(configuration.fixedResName)
-        .setKeepRoot(configuration.keepRoot)
-        .setMergeDuplicatedRes(configuration.mergeDuplicatedRes)
-        .setCompressFilePattern(configuration.compressFilePattern)
-        .setZipAlign(getZipAlignPath())
-        .setSevenZipPath(sevenzip.path)
-        .setOutBuilder(useFolder(config.file))
-        .setApkPath(absPath)
-        .setUseSign(configuration.useSign)
-        .setDigestAlg(configuration.digestalg)
-        .setMinSDKVersion(minSDKVersion)
-        .setTargetSDKVersion(targetSDKVersion)
+    InputParam.Builder builder = new InputParam.Builder();
+    builder.setMappingFile(configuration.mappingFile);
+    builder.setWhiteList(whiteListFullName);
+    builder.setUse7zip(configuration.use7zip);
+    builder.setMetaName(configuration.metaName);
+    builder.setFixedResName(configuration.fixedResName);
+    builder.setKeepRoot(configuration.keepRoot);
+    builder.setMergeDuplicatedRes(configuration.mergeDuplicatedRes);
+    builder.setCompressFilePattern(configuration.compressFilePattern);
+    builder.setZipAlign(getZipAlignPath());
+    builder.setSevenZipPath(sevenzip.path);
+    builder.setOutBuilder(useFolder(config.file));
+    builder.setApkPath(absPath);
+    builder.setUseSign(configuration.useSign);
+    builder.setDigestAlg(configuration.digestalg);
+    builder.setMinSDKVersion(minSDKVersion);
+    builder.setTargetSDKVersion(targetSDKVersion);
 
     if (configuration.finalApkBackupPath != null && configuration.finalApkBackupPath.length() > 0) {
       builder.setFinalApkBackupPath(configuration.finalApkBackupPath)

@@ -146,7 +146,7 @@ public class ARSCDecoder {
 
     File[] resFiles = rawResFile.listFiles();
 
-    // 需要看看哪些类型是要混淆文件路径的
+    // Need to see which types are to obfuscate file paths
     for (File resFile : resFiles) {
       String raw = resFile.getName();
       if (raw.contains("-")) {
@@ -156,11 +156,12 @@ public class ARSCDecoder {
     }
 
     if (!config.mKeepRoot) {
-      // 需要保持之前的命名方式
+      // Need to keep the previous naming method
       if (config.mUseKeepMapping) {
         HashMap<String, String> fileMapping = config.mOldFileMapping;
         List<String> keepFileNames = new ArrayList<>();
-        // 这里面为了兼容以前，也需要用以前的文件名前缀，即res混淆成什么
+        // In order to be compatible with the past, it is also necessary to use the previous
+        // file name prefix, that is, what is the obfuscation of res
         String resRoot = TypedValue.RES_FILE_PATH;
         for (String name : fileMapping.values()) {
           int dot = name.indexOf("/");
@@ -170,7 +171,7 @@ public class ARSCDecoder {
           resRoot = name.substring(0, dot);
           keepFileNames.add(name.substring(dot + 1));
         }
-        // 去掉所有之前保留的命名，为了简单操作，mapping里面有的都去掉
+        // Remove all previously reserved names. For simple operation, remove all the names in the mapping
         mResguardBuilder.removeStrings(keepFileNames);
 
         for (File resFile : resFiles) {
@@ -183,7 +184,7 @@ public class ARSCDecoder {
         }
       } else {
         for (int i = 0; i < resFiles.length; i++) {
-          // 这里也要用linux的分隔符,如果普通的话，就是r
+          // The linux separator is also used here, if it is normal, it is r
           mOldFileName.put("res" + "/" + resFiles[i].getName(),
              TypedValue.RES_FILE_PATH + "/" + mResguardBuilder.getReplaceString()
           );
@@ -231,7 +232,7 @@ public class ARSCDecoder {
       mCurPackageID = i;
       writePackage();
     }
-    // 最后需要把整个的size重写回去
+    // Finally, the entire size needs to be rewritten back
     reWriteTable();
   }
 
@@ -388,7 +389,7 @@ public class ARSCDecoder {
     int id = (byte) mIn.readInt();
     mOut.writeInt(id);
     mResId = id << 24;
-    //char_16的，一共256byte
+    //char_16, a total of 256byte
     mOut.writeBytes(mIn, 256);
     /* typeNameStrings */
     mOut.writeInt(mIn.readInt());
@@ -431,7 +432,7 @@ public class ARSCDecoder {
   private void reduceFromOldMappingFile() {
     if (mPkg.isCanResguard()) {
       if (mApkDecoder.getConfig().mUseKeepMapping) {
-        // 判断是否走keepmapping
+        // Determine whether to use keepmapping
         HashMap<String, HashMap<String, HashMap<String, String>>> resMapping = mApkDecoder.getConfig().mOldResMapping;
         String packName = mPkg.getName();
         if (resMapping.containsKey(packName)) {
@@ -440,7 +441,7 @@ public class ARSCDecoder {
 
           if (typeMaps.containsKey(typeName)) {
             HashMap<String, String> proguard = typeMaps.get(typeName);
-            // 去掉所有之前保留的命名，为了简单操作，mapping里面有的都去掉
+            // Remove all previously reserved names. For simple operation, remove all the names in the mapping
             mResguardBuilder.removeStrings(proguard.values());
           }
         }
@@ -491,10 +492,10 @@ public class ARSCDecoder {
       mCurrTypeID = id;
       initResGuardBuild(mCurrTypeID);
     }
-    // 是否混淆文件路径
+    // Whether to obfuscate file paths
     mShouldResguardForType = isToResguardFile(mTypeNames.getString(id - 1));
 
-    // 对，这里是用来描述差异性的！！！
+    // Yes, here is used to describe the difference! ! !
     mIn.skipBytes(entryCount * 4);
     mResId = (0xff000000 & mResId) | id << 16;
 
@@ -509,7 +510,7 @@ public class ARSCDecoder {
     // init resguard builder
     mResguardBuilder.reset(whiteListPatterns);
     mResguardBuilder.removeStrings(RawARSCDecoder.getExistTypeSpecNameStrings(resTypeId));
-    // 如果是保持mapping的话，需要去掉某部分已经用过的mapping
+    // If you keep the mapping, you need to remove some of the used mappings
     reduceFromOldMappingFile();
   }
 
@@ -535,7 +536,7 @@ public class ARSCDecoder {
     mOut.writeBytes(mIn, 3);
     int entryCount = mIn.readInt();
     mOut.writeInt(entryCount);
-    // 对，这里是用来描述差异性的！！！
+    // Yes, this is used to describe the difference! ! !
     ///* flags */mIn.skipBytes(entryCount * 4);
     int[] entryOffsets = mIn.readIntArray(entryCount);
     mOut.writeIntArray(entryOffsets);
@@ -590,7 +591,7 @@ public class ARSCDecoder {
     int specNamesId = mIn.readInt();
 
     if (mPkg.isCanResguard()) {
-      // 混淆过或者已经添加到白名单的都不需要再处理了
+      // Those that have been obfuscated or added to the whitelist do not need to be processed again
       if (!mResguardBuilder.isReplaced(mCurEntryID) && !mResguardBuilder.isInWhiteList(mCurEntryID)) {
         Configuration config = mApkDecoder.getConfig();
         boolean isWhiteList = false;
@@ -674,8 +675,8 @@ public class ARSCDecoder {
     }
     generalResIDMapping(mPkg.getName(), mType.getName(), mSpecNames.get(specNamesId).toString(), replaceString);
     mPkg.putSpecNamesReplace(mResId, replaceString);
-    // arsc name列混淆成固定名字, 减少string pool大小
-    boolean useFixedName = config.mFixedResName != null && config.mFixedResName.length() > 0;
+    // The arsc name column is obfuscate into a fixed name, reducing the size of the string pool
+    boolean useFixedName = config.mFixedResName != null && !config.mFixedResName.isEmpty();
     String fixedName = useFixedName ? config.mFixedResName : replaceString;
     mPkg.putSpecNamesblock(fixedName, replaceString);
     mType.putSpecResguardName(replaceString);
@@ -736,7 +737,8 @@ public class ARSCDecoder {
     byte type = mIn.readByte();
     int data = mIn.readInt();
 
-    //这里面有几个限制，一对于string ,id, array我们是知道肯定不用改的，第二看要那个type是否对应有文件路径
+    //There are several restrictions here. First, we know that there is no need to change string,
+    //id, and array. Second, we need to check whether the type corresponds to a file path.
     if (mPkg.isCanResguard()
        && flags
        && type == TypedValue.TYPE_STRING
@@ -747,7 +749,7 @@ public class ARSCDecoder {
         if (StringUtil.isBlank(raw) || raw.equalsIgnoreCase("null")) return;
 
         String proguard = mPkg.getSpecRepplace(mResId);
-        //这个要写死这个，因为resources.arsc里面就是用这个
+        //This should be written to death, because this is used in resources.arsc
         int secondSlash = raw.lastIndexOf("/");
         if (secondSlash == -1) {
           throw new AndrolibException(String.format("can not find \\ or raw string in res path = %s", raw));
@@ -762,7 +764,7 @@ public class ARSCDecoder {
           System.err.printf("can not found new res path, raw=%s\n", raw);
           return;
         }
-        //同理这里不能用File.separator，因为resources.arsc里面就是用这个
+        //Similarly, File.separator cannot be used here, because this is used in resources.arsc
         String result = newFilePath + "/" + proguard;
         int firstDot = raw.indexOf(".");
         if (firstDot != -1) {
@@ -771,7 +773,7 @@ public class ARSCDecoder {
         String compatibaleraw = new String(raw);
         String compatibaleresult = new String(result);
 
-        //为了适配window要做一次转换
+        //In order to adapt for windows to do the conversion
         if (!File.separator.contains("/")) {
           compatibaleresult = compatibaleresult.replace("/", File.separator);
           compatibaleraw = compatibaleraw.replace("/", File.separator);
@@ -790,7 +792,7 @@ public class ARSCDecoder {
           }
         }
 
-        //这里用的是linux的分隔符
+        //The linux delimiter is used here
         HashMap<String, Integer> compressData = mApkDecoder.getCompressData();
         if (compressData.containsKey(raw)) {
           compressData.put(result, compressData.get(raw));
@@ -979,7 +981,7 @@ public class ARSCDecoder {
   }
 
   private void writeConfigFlags() throws IOException, AndrolibException {
-    //总的有多大
+    //how big is the total
     int size = mIn.readInt();
     if (size < 28) {
       throw new AndrolibException("Config size < 28");
@@ -1021,7 +1023,7 @@ public class ARSCDecoder {
   }
 
   /**
-   * 为了加速，不需要处理string,id,array，这几个是肯定不是的
+   * In order to speed up, there is no need to process string, id, array, these are definitely not
    */
   private boolean isToResguardFile(String name) {
     return (!name.equals("string") && !name.equals("id") && !name.equals("array"));
@@ -1196,7 +1198,7 @@ public class ARSCDecoder {
       }
     }
 
-    // 对于某种类型用过的mapping，全部不能再用了
+    // For a certain type of mappings, all can no longer be used
     public void removeStrings(Collection<String> collection) {
       if (collection == null) return;
       mReplaceStringBuffer.removeAll(collection);
