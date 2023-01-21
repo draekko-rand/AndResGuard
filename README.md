@@ -26,7 +26,6 @@ apply plugin: 'AndResGuard'
 
 buildscript {
     repositories {
-        jcenter()
         google()
         mavenCentral()
     }
@@ -95,7 +94,6 @@ apply plugin: 'com.tencent.AndResGuard'
 
 buildscript {
     repositories {
-        jcenter()
         google()
         mavenCentral()
     }
