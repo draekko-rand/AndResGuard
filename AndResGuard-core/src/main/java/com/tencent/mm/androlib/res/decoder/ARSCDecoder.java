@@ -91,6 +91,7 @@ public class ARSCDecoder {
   private Writer mMappingWriter;
   private Writer mMergeDuplicatedResMappingWriter;
   private Map<Long,List<MergeDuplicatedResInfo>> mMergeDuplicatedResInfoData = new HashMap<>();
+  private int fixresname_count = 0;
 
   private ARSCDecoder(InputStream arscStream, ApkDecoder decoder) throws AndrolibException, IOException {
     mOldFileName = new LinkedHashMap<>();
@@ -677,7 +678,7 @@ public class ARSCDecoder {
     mPkg.putSpecNamesReplace(mResId, replaceString);
     // The arsc name column is obfuscate into a fixed name, reducing the size of the string pool
     boolean useFixedName = config.mFixedResName != null && !config.mFixedResName.isEmpty();
-    String fixedName = useFixedName ? config.mFixedResName : replaceString;
+    String fixedName = useFixedName ? config.mFixedResName + String.valueOf(++fixresname_count) : replaceString;
     mPkg.putSpecNamesblock(fixedName, replaceString);
     mType.putSpecResguardName(replaceString);
   }
