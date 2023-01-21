@@ -50,6 +50,7 @@ andResGuard {
     whiteList = [
         // your icon
         "R.drawable.icon",
+        "R.mipmap.ic_launcher",
         // for fabric
         "R.string.com.crashlytics.*",
         // for google-services
@@ -120,6 +121,7 @@ andResGuard {
     whiteList = [
         // your icon
         "R.drawable.icon",
+        "R.mipmap.ic_launcher",
         // for fabric
         "R.string.com.crashlytics.*",
         // for google-services
